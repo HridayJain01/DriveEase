@@ -1,118 +1,48 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { CardSkeletons, Icon, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
-import { telLink, useApi, waLink } from '../lib.js';
+import { CardSkeletons, Icon, Rate, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
+import { formatDate, img, telLink, tripMessage, useApi, waLink } from '../lib.js';
+import { calm, Count, gsap, Reveal, ScrollTrigger, useGSAP, useSplitReveal } from '../motion.jsx';
 
-const STEPS = [
-  ['Pick a car — or just the trip', 'Browse the fleet, or tell us where you’re going and how many are travelling.'],
-  ['Confirm on WhatsApp', 'We reply with availability, the rate and the documents to keep ready.'],
-  ['Collect the keys and go', 'Pickup time and place are agreed in the same chat. No apps, no accounts.'],
-];
+const lowestRate = (vs) => {
+  const nums = vs.map((v) => Number(v.rate?.replace(/[^\d]/g, ''))).filter(Boolean);
+  return nums.length ? Math.min(...nums) : 0;
+};
 
 export default function Home() {
   const { data: site } = useApi('/api/site');
   const { data: vehicles } = useApi('/api/vehicles');
-  const highlights = vehicles && [...vehicles.filter((v) => v.featured), ...vehicles.filter((v) => !v.featured)].slice(0, 3);
+  const lead = vehicles?.find((v) => v.featured) || vehicles?.[0];
+
+  useEffect(() => { ScrollTrigger.refresh(); }, [site, vehicles]); // content above the story changed height
 
   return (
     <>
-      <Seo description={site?.tagline} />
-      <section className="hero wrap">
-        <div className="hero-copy">
-          <p className="eyebrow">Car rentals{site?.city ? ` · ${site.city}` : ''}</p>
-          <h1 className="hero-title"><span>Tell us the trip.</span> <span>We’ll sort the car.</span></h1>
-          <p className="lede">{site?.tagline}</p>
-          <div className="hero-actions">
-            <Link className="btn btn-dark" to="/fleet">Browse the fleet<Icon name="arrow" size={18} /></Link>
-            {site && <a className="btn btn-ghost" href={telLink(site.phone)}><Icon name="phone" size={18} />{site.phone}</a>}
-          </div>
-          {vehicles && (
-            <ul className="hero-facts">
-              <li><strong>{vehicles.length}</strong> cars in the fleet</li>
-              <li><strong>{Math.max(...vehicles.map((v) => v.seats))}</strong> seats in our largest</li>
-              {site?.hours && <li>{site.hours}</li>}
-            </ul>
-          )}
-        </div>
-        <TripComposer site={site} vehicles={vehicles} />
-      </section>
+      <Seo fullTitle={site && `${site.businessName} — Car rentals${site.city ? ` in ${site.city}` : ''}`} description={site?.tagline} />
+      <Hero site={site} vehicles={vehicles} lead={lead} />
+      {site && lead && <Story site={site} car={lead} />}
+      <FleetRail site={site} vehicles={vehicles} />
+      {site?.services?.length > 0 && <WaysToRent site={site} />}
 
-      <section className="section wrap" aria-labelledby="fleet-h">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">The fleet</p>
-            <h2 id="fleet-h">Pick your ride</h2>
-          </div>
-          <Link className="link-arrow" to="/fleet">See all {vehicles ? vehicles.length : ''} cars<Icon name="arrow" size={18} /></Link>
-        </div>
-        <div className="car-grid scroll-x">
-          {highlights ? highlights.map((v) => <VehicleCard key={v.slug} v={v} site={site} />) : <CardSkeletons />}
-        </div>
-      </section>
-
-      <section className="section road" aria-labelledby="how-h">
-        <div className="wrap">
-          <p className="eyebrow">How it works</p>
-          <h2 id="how-h">From message to keys in three stops</h2>
-          <ol className="steps">
-            {STEPS.map(([title, text], i) => (
-              <li key={title}>
-                <span className="stone" aria-hidden="true"><small>km</small>{i + 1}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {site && (
-        <section className="section wrap" aria-labelledby="services-h">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Services</p>
-              <h2 id="services-h">However you’re travelling</h2>
-            </div>
-            <Link className="link-arrow" to="/services">All services<Icon name="arrow" size={18} /></Link>
-          </div>
-          <ul className="service-rows">
-            {site.services.map((s) => (
-              <li key={s.slug}>
-                <h3>{s.name}</h3>
-                <p>{s.summary}</p>
-                <a href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer" aria-label={`Ask about ${s.name} on WhatsApp`}>
-                  Ask<Icon name="arrow" size={16} />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="section wrap" aria-labelledby="reviews-h">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Reviews</p>
-            <h2 id="reviews-h">What travellers say</h2>
-          </div>
+      <section className="section" aria-labelledby="reviews-h">
+        <div className="wrap section-head">
+          <div><p className="eyebrow">Reviews</p><h2 id="reviews-h">From the people in the driver’s seat.</h2></div>
           <Link className="link-arrow" to="/contact#reviews">All reviews<Icon name="arrow" size={18} /></Link>
         </div>
-        <ReviewList limit={3} />
+        <ReviewList marquee />
       </section>
 
       {site?.faqs?.length > 0 && (
         <section className="section wrap faq-wrap" aria-labelledby="faq-h">
-          <div>
-            <p className="eyebrow">Good to know</p>
-            <h2 id="faq-h">Questions, answered</h2>
-          </div>
-          <div className="faq">
+          <Reveal><p className="eyebrow">Good to know</p><h2 id="faq-h">Before you ask.</h2></Reveal>
+          <Reveal className="faq" data-each="">
             {site.faqs.map((f) => (
               <details key={f.q}>
-                <summary>{f.q}</summary>
+                <summary>{f.q}<Icon name="down" size={18} /></summary>
                 <p>{f.a}</p>
               </details>
             ))}
-          </div>
+          </Reveal>
         </section>
       )}
 
@@ -121,17 +51,213 @@ export default function Home() {
   );
 }
 
-export function CtaBand({ site }) {
+/* ---------- Hero ---------- */
+function Hero({ site, vehicles, lead }) {
+  const root = useRef();
+  const title = useRef();
+  useSplitReveal(title);
+  useGSAP(() => {
+    if (calm()) return;
+    gsap.from('.hero-car', { scale: 1.15, duration: 2.2, ease: 'expo.out' }); // no fade: it's the largest paint
+    gsap.from('.hero-rise', { y: 24, opacity: 0, duration: 1, ease: 'expo.out', stagger: 0.08, delay: 0.45 });
+    gsap.to('.hero-car', { yPercent: 14, scale: 1.06, ease: 'none', scrollTrigger: { trigger: root.current, start: 'top top', end: 'bottom top', scrub: true } });
+  }, { scope: root, dependencies: [!!lead], revertOnUpdate: true });
+
   return (
-    <section className="cta-band">
-      <div className="wrap cta-inner">
-        <h2>Where to next?</h2>
-        <p>Send your dates and destination — we’ll reply with cars that fit.</p>
-        <div className="hero-actions">
-          <a className="btn btn-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />WhatsApp us</a>
-          <a className="btn btn-outline-light" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>
+    <section className="hero" ref={root}>
+      <div className="hero-visual" aria-hidden="true">
+        {lead && <img className="hero-car" src={img(lead.images?.[0], 1200)} srcSet={`${img(lead.images?.[0], 700)} 700w, ${img(lead.images?.[0], 1400)} 1400w`} sizes="100vw" alt="" fetchPriority="high" />}
+        <span className="hero-beam" />
+      </div>
+      <div className="wrap hero-inner">
+        <p className="hero-rise status"><i aria-hidden="true" />Car rentals{site?.city ? ` · ${site.city}` : ''}</p>
+        <h1 ref={title} className="hero-title">Tell us the trip. <em>We’ll sort the car.</em></h1>
+        <div className="hero-rise hero-form"><TripComposer site={site} vehicles={vehicles} /></div>
+        <Link className="hero-rise link-arrow hero-fleet" to="/fleet">Browse all {vehicles?.length || ''} cars<Icon name="arrow" size={16} /></Link>
+        {vehicles?.length > 0 && (
+          <dl className="hero-rise readouts">
+            <div><dt>Cars</dt><dd><Count to={vehicles.length} pad={2} /></dd></div>
+            <div><dt>Seats, max</dt><dd><Count to={Math.max(...vehicles.map((v) => v.seats))} pad={2} /></dd></div>
+            {lowestRate(vehicles) > 0 && <div><dt>From / day</dt><dd>₹<Count to={lowestRate(vehicles)} /></dd></div>}
+          </dl>
+        )}
+        <a className="hero-rise scroll-cue" href="#story">Scroll to see how it works<Icon name="down" size={16} /></a>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- The story: the whole business model, told on a phone ---------- */
+const CHAPTERS = [
+  { label: 'Pick', title: 'Pick the car.', text: 'Browse the fleet and tap Enquire on the one you like, or just tell us the trip.' },
+  { label: 'Message', title: 'Message us on WhatsApp.', text: 'Your pickup, drop-off and car are typed in for you. One tap to send.' },
+  { label: 'Confirm', title: 'We confirm in the chat.', text: 'Availability, the rate and the documents to keep ready, in writing, before you commit.' },
+  { label: 'Drive', title: 'Collect the keys. Drive.', text: 'Pickup time and place are agreed in the same thread. No app, no account, no payment online.' },
+];
+
+const inDays = (n) => new Date(Date.now() + n * 864e5).toLocaleDateString('en-CA');
+
+function Story({ site, car }) {
+  const root = useRef();
+  const trigger = useRef();
+  const [step, setStep] = useState(0);
+
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      trigger.current = ScrollTrigger.create({
+        trigger: root.current,
+        start: 'top top',
+        end: () => `+=${innerHeight * 3}`,
+        pin: '.story-stage',
+        onUpdate: (self) => {
+          setStep(Math.min(3, Math.floor(self.progress * 4)));
+          gsap.set('.story-bar i', { scaleX: self.progress });
+        },
+      });
+      return () => { trigger.current = null; };
+    });
+  }, { scope: root });
+
+  function go(i) {
+    const st = trigger.current;
+    if (!st) return setStep(i);
+    scrollTo({ top: st.start + (st.end - st.start) * ((i + 0.5) / 4), behavior: calm() ? 'auto' : 'smooth' });
+  }
+
+  const message = tripMessage(site.whatsappMessage, { car: car.name, from: 'Airport T2', to: 'Lonavala' });
+  const c = CHAPTERS[step];
+
+  return (
+    <section className="story" id="story" ref={root} aria-label="How renting works">
+      <div className="story-stage">
+        <div className="wrap story-grid">
+          <div className="story-copy">
+            <p className="eyebrow"><span className="mono">0{step + 1} / 04</span> How it works</p>
+            <div className="story-text" key={step}>
+              <h2>{c.title}</h2>
+              <p>{c.text}</p>
+            </div>
+          </div>
+
+          <div className="phone" aria-hidden="true">
+            <div className="phone-notch" />
+            {step === 0 ? (
+              <div className="screen screen-fleet" key="fleet">
+                <p className="screen-label">Our fleet</p>
+                <div className="mini-card">
+                  <img src={img(car.images?.[0], 500)} alt="" />
+                  <div>
+                    <strong>{car.name}</strong>
+                    <span>{car.category} · {car.seats} seats · {car.fuel}</span>
+                    <Rate rate={car.rate} />
+                  </div>
+                  <span className="mini-cta"><Icon name="whatsapp" size={14} />Enquire</span>
+                </div>
+                <div className="mini-ghost" />
+              </div>
+            ) : (
+              <div className="screen screen-chat" key="chat">
+                <div className="chat-head">
+                  <span className="chat-avatar">DE</span>
+                  <span><strong>{site.businessName}</strong><small>Replies in this chat</small></span>
+                </div>
+                <div className="chat-body">
+                  <p className="msg out">{message}<time>10:02</time></p>
+                  {step >= 2 && (
+                    <p className="msg in">
+                      ✓ The {car.name} is available.{'\n'}Rate: {car.rate || 'shared on request'}{'\n'}Please keep your licence and ID ready.<time>10:06</time>
+                    </p>
+                  )}
+                  {step >= 3 && (
+                    <div className="msg in msg-card">
+                      <span className="msg-key"><Icon name="key" size={18} /></span>
+                      <span><strong>Pickup confirmed</strong>{formatDate(inDays(3), { weekday: 'short', day: 'numeric', month: 'short' })} · 9:00 am<small>{site.address}</small></span>
+                    </div>
+                  )}
+                  {step === 1 && <p className="typing"><i /><i /><i /></p>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="story-pill" role="group" aria-label="Steps">
+          {CHAPTERS.map((ch, i) => (
+            <button key={ch.label} aria-current={i === step ? 'step' : undefined} className={i < step ? 'done' : ''} onClick={() => go(i)}>
+              <span aria-hidden="true" />{ch.label}
+            </button>
+          ))}
+          <span className="story-bar" aria-hidden="true"><i /></span>
         </div>
       </div>
     </section>
   );
 }
+
+/* ---------- Fleet rail ---------- */
+function FleetRail({ site, vehicles }) {
+  const [type, setType] = useState('');
+  const types = vehicles ? [...new Set(vehicles.map((v) => v.category))] : [];
+  const shown = vehicles?.filter((v) => !type || v.category === type);
+  return (
+    <section className="section" aria-labelledby="fleet-h">
+      <div className="wrap section-head">
+        <Reveal><p className="eyebrow">The fleet</p><h2 id="fleet-h">Pick your ride.</h2></Reveal>
+        <Link className="link-arrow" to="/fleet">All {vehicles?.length || ''} cars<Icon name="arrow" size={18} /></Link>
+      </div>
+      <div className="wrap tabs" role="group" aria-label="Filter by car type">
+        {['', ...types].map((c) => (
+          <button key={c || 'all'} aria-pressed={type === c} onClick={() => setType(c)}>{c || 'All'}</button>
+        ))}
+      </div>
+      <div className="rail" key={type}>
+        {shown ? shown.map((v) => <VehicleCard key={v.slug} v={v} site={site} />) : <CardSkeletons />}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Ways to rent (services) ---------- */
+function WaysToRent({ site }) {
+  const [i, setI] = useState(0);
+  const s = site.services[i] || site.services[0];
+  return (
+    <section className="section wrap ways" aria-labelledby="ways-h">
+      <Reveal><p className="eyebrow">Ways to rent</p><h2 id="ways-h">One fleet. Every kind of trip.</h2></Reveal>
+      <div className="tabs ways-tabs" role="tablist" aria-label="Services">
+        {site.services.map((x, j) => (
+          <button key={x.slug} role="tab" aria-selected={j === i} aria-controls="way-panel" onClick={() => setI(j)}>{x.name}</button>
+        ))}
+      </div>
+      <div className="way" id="way-panel" role="tabpanel" key={s.slug}>
+        <span className="way-index mono">{String(i + 1).padStart(2, '0')} / {String(site.services.length).padStart(2, '0')}</span>
+        <h3>{s.name}</h3>
+        <p className="way-summary">{s.summary}</p>
+        <p>{s.details}</p>
+        <a className="btn btn-amber" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer">
+          <Icon name="whatsapp" />Ask about {s.name.toLowerCase()}
+        </a>
+      </div>
+    </section>
+  );
+}
+
+export function CtaBand({ site }) {
+  return (
+    <section className="cta">
+      <div className="wrap">
+        <Reveal>
+          <p className="eyebrow">Ready when you are</p>
+          <h2>Where to <em>next?</em></h2>
+          <p className="lede">Send your dates and destination. We’ll reply with the cars that fit.</p>
+          <div className="hero-actions">
+            <a className="btn btn-amber" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />WhatsApp us</a>
+            <a className="btn btn-glass" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+

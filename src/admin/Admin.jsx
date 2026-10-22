@@ -4,19 +4,10 @@ import { Icon } from '../components.jsx';
 import { clearCache, img, telLink, useApi, waLink } from '../lib.js';
 import { collections, settingsFields } from './config.js';
 import { Fields } from './Fields.jsx';
+import { api, toast } from './api.js';
 import './admin.css';
 
 /* ---------- Helpers ---------- */
-async function api(method, url, body) {
-  const res = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body && JSON.stringify(body) });
-  const data = res.status === 204 ? null : await res.json().catch(() => ({}));
-  if (res.status === 401 && !url.endsWith('/login')) dispatchEvent(new Event('admin:signedout'));
-  if (!res.ok) throw Object.assign(new Error(data?.error || 'Couldn’t save. Check your connection and try again.'), { errors: data?.errors });
-  return data;
-}
-
-const toast = (text, tone = 'ok') => dispatchEvent(new CustomEvent('admin:toast', { detail: { text, tone } }));
-
 function Toasts() {
   const [items, setItems] = useState([]);
   useEffect(() => {
@@ -81,7 +72,7 @@ export default function AdminApp() {
     <div className="a-shell">
       <aside className="a-side">
         <Link to="/admin" className="a-brand">
-          <svg viewBox="0 0 32 40" width="22" height="28" aria-hidden="true"><path d="M3 17a13 13 0 0 1 26 0v20H3z" fill="#fff" stroke="#1a1e21" strokeWidth="2.5" /><path d="M3 17a13 13 0 0 1 26 0z" fill="var(--cap)" stroke="#1a1e21" strokeWidth="2.5" /></svg>
+          <span className="a-mark" aria-hidden="true" />
           <span>Drive Ease<small>Admin</small></span>
         </Link>
         <nav className="a-nav" aria-label="Admin">
@@ -127,15 +118,14 @@ function Login({ onSignedIn }) {
   }
   return (
     <div className="a-login">
-      <form className="milestone" onSubmit={submit}>
-        <div className="milestone-cap"><span className="km">Drive Ease</span><h1>Admin sign in</h1></div>
-        <div className="milestone-body">
-          <label className="field"><span>Email</span><input name="email" type="email" autoComplete="username" required autoFocus /></label>
-          <label className="field"><span>Password</span><input name="password" type="password" autoComplete="current-password" required /></label>
-          {error && <p className="form-alert" role="alert">{error}</p>}
-          <button className="btn btn-dark btn-block" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
-          <Link className="composer-alt" to="/">Back to the website</Link>
-        </div>
+      <form className="a-login-card" onSubmit={submit}>
+        <span className="a-brand"><span>Drive Ease<small>Admin</small></span></span>
+        <h1>Sign in</h1>
+        <label className="a-field"><span className="a-label">Email</span><input name="email" type="email" autoComplete="username" required autoFocus /></label>
+        <label className="a-field"><span className="a-label">Password</span><input name="password" type="password" autoComplete="current-password" required /></label>
+        {error && <p className="form-alert" role="alert">{error}</p>}
+        <button className="btn btn-dark btn-block" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <Link className="a-back-site" to="/">Back to the website</Link>
       </form>
     </div>
   );
@@ -293,12 +283,7 @@ function CollectionEdit({ type }) {
         <Link className="a-back" to={`/admin/${type}`}>← {c.label}</Link>
         <h1>{isNew ? `New ${c.singular}` : c.title(doc)}</h1>
       </header>
-      {Object.keys(errors).length > 0 && (
-        <div className="form-alert a-errors" role="alert">
-          <strong>Couldn’t save. Fix these first:</strong>
-          <ul>{Object.values(errors).map((m) => <li key={m}>{m}</li>)}</ul>
-        </div>
-      )}
+      {Object.keys(errors).length > 0 && <p className="form-alert a-errors" role="alert">Couldn’t save. Fix the highlighted fields below.</p>}
       <div className="a-edit">
         <div className="a-card"><Fields fields={c.main} value={doc} onChange={setDoc} errors={errors} /></div>
         <aside className="a-card a-edit-side">
@@ -307,15 +292,15 @@ function CollectionEdit({ type }) {
           {!isNew && <button type="button" className="a-link danger" onClick={remove}>Delete this {c.singular}</button>}
         </aside>
       </div>
-      <SaveBar dirty={dirtyRef.current} saving={saving} label={isNew ? `Create ${c.singular}` : 'Save changes'} />
+      <SaveBar dirty={dirtyRef.current} saving={saving} isNew={isNew} label={isNew ? `Create ${c.singular}` : 'Save changes'} />
     </form>
   );
 }
 
-function SaveBar({ dirty, saving, label = 'Save changes' }) {
+function SaveBar({ dirty, saving, label = 'Save changes', isNew }) {
   return (
     <div className="a-savebar">
-      <span>{saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'All changes saved'}</span>
+      <span>{saving ? 'Saving…' : isNew ? 'Not created yet' : dirty ? 'Unsaved changes' : 'All changes saved'}</span>
       <button className="btn btn-dark" disabled={saving || !dirty}>{label}</button>
     </div>
   );
@@ -349,9 +334,7 @@ function SettingsPage() {
   return (
     <form onSubmit={save} className="a-settings">
       <header className="a-head"><h1>Site details</h1><p>Contact details, WhatsApp, About page, services and FAQs. Changes go live as soon as you save.</p></header>
-      {Object.keys(errors).length > 0 && (
-        <div className="form-alert a-errors" role="alert"><strong>Couldn’t save. Fix these first:</strong><ul>{Object.values(errors).map((m) => <li key={m}>{m}</li>)}</ul></div>
-      )}
+      {Object.keys(errors).length > 0 && <p className="form-alert a-errors" role="alert">Couldn’t save. Fix the highlighted fields below.</p>}
       <Fields fields={settingsFields} value={doc} onChange={setDoc} errors={errors} />
       <SaveBar dirty={dirtyRef.current} saving={saving} />
     </form>

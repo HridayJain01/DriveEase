@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
 import { img, srcSet, telLink, today, tripMessage, useApi, waLink } from './lib.js';
+import { Reveal, ScrollTrigger } from './motion.jsx';
 
 /* ---------- Icons ---------- */
 const paths = {
@@ -9,14 +10,16 @@ const paths = {
   seats: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
   bags: <><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></>,
   fuel: <><path d="M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18" /><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.8a2 2 0 0 0-.6-1.4L18 5" /></>,
-  gears: <><path d="M6 5v14M12 5v14M18 5v7H6" /></>,
-  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  gears: <path d="M6 5v14M12 5v14M18 5v7H6" />,
+  menu: <path d="M4 8h16M4 16h16" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
   mail: <><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" /></>,
   pin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></>,
   clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
   car: <><path d="M19 17h2a1 1 0 0 0 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5a1.7 1.7 0 0 0-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4a1 1 0 0 0 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></>,
   check: <path d="m5 12 5 5L20 7" />,
+  down: <path d="M12 5v14M6 13l6 6 6-6" />,
+  key: <><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14 9l2 2" /></>,
 };
 
 export function Icon({ name, size = 20 }) {
@@ -27,7 +30,7 @@ export function Icon({ name, size = 20 }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
   );
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
   );
 }
 
@@ -35,21 +38,17 @@ export function Icon({ name, size = 20 }) {
 export function Logo() {
   return (
     <Link to="/" className="logo" aria-label="Drive Ease home">
-      <svg viewBox="0 0 32 40" width="26" height="32" aria-hidden="true">
-        <path d="M3 17a13 13 0 0 1 26 0v20H3z" fill="#fff" stroke="#1a1e21" strokeWidth="2.5" />
-        <path d="M3 17a13 13 0 0 1 26 0z" fill="var(--cap)" stroke="#1a1e21" strokeWidth="2.5" strokeLinejoin="round" />
-        <path d="M10 26h12M10 31h8" stroke="#1a1e21" strokeWidth="2.5" strokeLinecap="round" />
-      </svg>
-      <span>Drive Ease</span>
+      <span className="logo-mark" aria-hidden="true" />
+      <span>Drive<b>Ease</b></span>
     </Link>
   );
 }
 
-export function Seo({ title, description }) {
+export function Seo({ title, fullTitle, description }) {
   useEffect(() => {
-    document.title = title ? `${title} — Drive Ease` : 'Drive Ease — Car rentals';
+    document.title = fullTitle || (title ? `${title} — Drive Ease` : 'Drive Ease — Car rentals');
     if (description) document.querySelector('meta[name="description"]')?.setAttribute('content', description);
-  }, [title, description]);
+  }, [title, fullTitle, description]);
   return null;
 }
 
@@ -58,102 +57,116 @@ const nav = [
   ['/fleet', 'Fleet'],
   ['/services', 'Services'],
   ['/about', 'About'],
-  ['/blog', 'Blog'],
-  ['/contact#reviews', 'Reviews'],
+  ['/blog', 'Journal'],
   ['/contact', 'Contact'],
 ];
 
 export function Layout() {
   const { data: site } = useApi('/api/site');
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { pathname, hash } = useLocation();
 
   useEffect(() => setOpen(false), [pathname, hash]);
   useEffect(() => {
-    if (hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }));
-  }, [pathname, hash]);
-  useEffect(() => {
+    document.documentElement.classList.toggle('menu-open', open);
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
     addEventListener('keydown', onKey);
     return () => removeEventListener('keydown', onKey);
+  }, [open]);
+  useEffect(() => {
+    const on = () => setScrolled(scrollY > 12);
+    on(); addEventListener('scroll', on, { passive: true });
+    return () => removeEventListener('scroll', on);
   }, []);
+  useEffect(() => {
+    if (hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }));
+    const t = setTimeout(() => ScrollTrigger.refresh(), 400); // new page, new layout: re-measure scroll animations
+    return () => clearTimeout(t);
+  }, [pathname, hash]);
 
   return (
     <>
       <a className="skip" href="#main">Skip to content</a>
-      <header className={`site-header${open ? ' is-open' : ''}`}>
-        <div className="wrap header-row">
+      <header className={`topbar${scrolled ? ' is-scrolled' : ''}${open ? ' is-open' : ''}`}>
+        <div className="topbar-pill">
           <Logo />
           <nav className="main-nav" aria-label="Main">
-            {nav.map(([to, label]) => (
-              <NavLink key={label} to={to} end={to.includes('#')} className={({ isActive }) => (isActive && !to.includes('#') && !hash ? 'active' : '')}>{label}</NavLink>
-            ))}
+            {nav.map(([to, label]) => <NavLink key={to} to={to}>{label}</NavLink>)}
           </nav>
-          <div className="header-actions">
-            {site && <a className="header-phone" href={telLink(site.phone)}><Icon name="phone" size={16} />{site.phone}</a>}
-            {site && <a className="btn btn-wa btn-sm" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={16} />WhatsApp</a>}
-            <button className="menu-btn" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)}>
-              <Icon name={open ? 'close' : 'menu'} size={24} />
-            </button>
-          </div>
+          {site && (
+            <a className="pill-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp">
+              <Icon name="whatsapp" size={18} /><span>Enquire</span>
+            </a>
+          )}
+          <button className="menu-btn" aria-expanded={open} aria-controls="menu" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)}>
+            <Icon name={open ? 'close' : 'menu'} size={22} />
+          </button>
         </div>
-        <nav id="mobile-nav" className="mobile-nav" aria-label="Mobile" hidden={!open}>
-          {nav.map(([to, label]) => <Link key={label} to={to}>{label}</Link>)}
-          {site && <a href={telLink(site.phone)} className="mobile-phone"><Icon name="phone" size={18} />Call {site.phone}</a>}
-        </nav>
       </header>
+      <nav id="menu" className="menu-sheet" aria-label="Menu" hidden={!open}>
+        {[['/', 'Home'], ...nav].map(([to, label], i) => (
+          <Link key={to} to={to} style={{ '--i': i }}><small>0{i + 1}</small>{label}</Link>
+        ))}
+        {site && (
+          <div className="menu-foot">
+            <a href={telLink(site.phone)}><Icon name="phone" size={16} />{site.phone}</a>
+            <span>{site.hours}</span>
+          </div>
+        )}
+      </nav>
       <main id="main"><Outlet /></main>
       {site && <Footer site={site} />}
-      {site && <ActionBar site={site} />}
-      <ScrollRestoration getKey={(loc) => loc.pathname} />
+      {site && <Dock site={site} />}
+      <ScrollRestoration />
     </>
   );
 }
 
 function Footer({ site }) {
   return (
-    <footer className="site-footer">
-      <div className="wrap footer-grid">
-        <div>
-          <Logo />
-          <p className="footer-tag">{site.tagline}</p>
+    <footer className="footer">
+      <div className="wrap">
+        <p className="footer-big" aria-hidden="true">Drive<b>Ease</b></p>
+        <div className="footer-grid">
+          <div>
+            <h2 className="label">Explore</h2>
+            <ul>{nav.map(([to, label]) => <li key={to}><Link to={to}>{label}</Link></li>)}<li><Link to="/contact#reviews">Reviews</Link></li></ul>
+          </div>
+          <div>
+            <h2 className="label">Talk to us</h2>
+            <ul>
+              <li><a href={telLink(site.phone)}>{site.phone}</a></li>
+              <li><a href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer">WhatsApp</a></li>
+              {site.whatsappCatalogueUrl && <li><a href={site.whatsappCatalogueUrl} target="_blank" rel="noreferrer">WhatsApp catalogue</a></li>}
+              {site.email && <li><a href={`mailto:${site.email}`}>{site.email}</a></li>}
+            </ul>
+          </div>
+          <div>
+            <h2 className="label">Find us</h2>
+            <p>{site.address}</p>
+            <p className="mono">{site.hours}</p>
+            <p className="footer-social">
+              {Object.entries(site.socials || {}).filter(([, u]) => u).map(([k, u]) => <a key={k} href={u} target="_blank" rel="noreferrer">{k[0].toUpperCase() + k.slice(1)}</a>)}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="footer-h">Explore</h2>
-          <ul>{nav.map(([to, label]) => <li key={label}><Link to={to}>{label}</Link></li>)}</ul>
+        <div className="footer-base">
+          <span>© {new Date().getFullYear()} {site.businessName}</span>
+          <span>Enquiries only. Bookings are confirmed by our team.</span>
         </div>
-        <div>
-          <h2 className="footer-h">Talk to us</h2>
-          <ul>
-            <li><a href={telLink(site.phone)}>{site.phone}</a></li>
-            <li><a href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer">WhatsApp chat</a></li>
-            {site.whatsappCatalogueUrl && <li><a href={site.whatsappCatalogueUrl} target="_blank" rel="noreferrer">WhatsApp catalogue</a></li>}
-            <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
-          </ul>
-        </div>
-        <div>
-          <h2 className="footer-h">Find us</h2>
-          <p>{site.address}</p>
-          <p>{site.hours}</p>
-          <p className="footer-social">
-            {Object.entries(site.socials || {}).filter(([, u]) => u).map(([k, u]) => <a key={k} href={u} target="_blank" rel="noreferrer">{k[0].toUpperCase() + k.slice(1)}</a>)}
-          </p>
-        </div>
-      </div>
-      <div className="wrap footer-base">
-        <span>© {new Date().getFullYear()} {site.businessName}</span>
-        <span>Enquiries only — bookings are confirmed by our team.</span>
       </div>
     </footer>
   );
 }
 
-function ActionBar({ site }) {
+// Phone: a floating dock with Call + WhatsApp. Desktop: a single WhatsApp button.
+function Dock({ site }) {
   return (
-    <div className="action-bar">
-      <a className="btn btn-ghost" href={telLink(site.phone)}><Icon name="phone" size={18} />Call</a>
-      <a className="btn btn-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={18} />WhatsApp us</a>
-    </div>
+    <aside className="dock" aria-label="Quick contact">
+      <a className="dock-call" href={telLink(site.phone)} aria-label={`Call ${site.phone}`}><Icon name="phone" size={18} /><span>Call</span></a>
+      <a className="dock-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={18} />WhatsApp us</a>
+    </aside>
   );
 }
 
@@ -166,28 +179,28 @@ export function Photo({ src, alt, sizes = '(max-width: 700px) 100vw, 50vw', clas
 
 export function Specs({ v }) {
   return (
-    <ul className="specs" aria-label="Key specifications">
-      <li><Icon name="seats" size={16} />{v.seats} seats</li>
-      <li><Icon name="bags" size={16} />{v.bags} bags</li>
-      <li><Icon name="fuel" size={16} />{v.fuel}</li>
-      <li><Icon name="gears" size={16} />{v.transmission}</li>
-    </ul>
+    <dl className="specs">
+      <div><dt>Seats</dt><dd>{v.seats}</dd></div>
+      <div><dt>Bags</dt><dd>{v.bags}</dd></div>
+      <div><dt>Fuel</dt><dd>{v.fuel}</dd></div>
+      <div><dt>Gearbox</dt><dd>{v.transmission === 'Automatic' ? 'Auto' : v.transmission}</dd></div>
+    </dl>
   );
 }
 
 export function Rate({ rate }) {
   if (!rate) return <span className="rate rate-ask">Rate on request</span>;
   const [amount, unit] = rate.split('/');
-  return <span className="rate"><strong>{amount.trim()}</strong>{unit && <small>/{unit.trim()}</small>}</span>;
+  return <span className="rate"><strong>{amount.trim()}</strong>{unit && <small>/ {unit.trim()}</small>}</span>;
 }
 
 export function VehicleCard({ v, site }) {
   return (
     <article className="car-card">
       <div className="car-media">
-        <Photo src={v.images?.[0]} alt={`${v.name}, ${v.category.toLowerCase()}`} sizes="(max-width: 700px) 90vw, 400px" />
-        <span className="tag">{v.category}</span>
-        {v.featured && <span className="badge">Featured</span>}
+        <Photo src={v.images?.[0]} alt={`${v.name}, ${v.category.toLowerCase()}`} sizes="(max-width: 700px) 86vw, 400px" />
+        <span className="car-tag">{v.category}</span>
+        {v.featured && <span className="car-badge">Featured</span>}
       </div>
       <div className="car-body">
         <h3><Link to={`/fleet/${v.slug}`} className="stretch">{v.name}</Link></h3>
@@ -196,7 +209,7 @@ export function VehicleCard({ v, site }) {
         <div className="car-foot">
           <Rate rate={v.rate} />
           {site && (
-            <a className="btn btn-wa btn-sm lift" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nCar: ${v.name}`)} target="_blank" rel="noreferrer">
+            <a className="btn btn-amber btn-sm lift" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nCar: ${v.name}`)} target="_blank" rel="noreferrer" aria-label={`Enquire about the ${v.name} on WhatsApp`}>
               <Icon name="whatsapp" size={16} />Enquire
             </a>
           )}
@@ -211,22 +224,31 @@ export function CardSkeletons({ n = 3 }) {
 }
 
 export function Stars({ n }) {
-  return <span className="stars" aria-label={`${n} out of 5 stars`}>{Array.from({ length: 5 }, (_, i) => <span key={i} className={i < n ? 'on' : ''}><Icon name="star" size={16} /></span>)}</span>;
+  return <span className="stars" role="img" aria-label={`${n} out of 5 stars`}>{Array.from({ length: 5 }, (_, i) => <span key={i} className={i < n ? 'on' : ''}><Icon name="star" size={14} /></span>)}</span>;
 }
 
-export function ReviewList({ limit }) {
-  const { data } = useApi('/api/reviews');
-  if (!data) return <div className="reviews"><div className="review skeleton" /><div className="review skeleton" /><div className="review skeleton" /></div>;
-  if (!data.length) return <p className="muted">Reviews will appear here once they are added.</p>;
+function Review({ r }) {
   return (
-    <div className="reviews">
-      {data.slice(0, limit).map((r, i) => (
-        <figure className="review" key={i}>
-          <Stars n={r.rating} />
-          <blockquote>{r.text}</blockquote>
-          <figcaption><strong>{r.name}</strong>{r.location && <span> · {r.location}</span>}</figcaption>
-        </figure>
-      ))}
+    <figure className="review">
+      <Stars n={r.rating} />
+      <blockquote>“{r.text}”</blockquote>
+      <figcaption><span className="avatar" aria-hidden="true">{r.name.split(' ').map((w) => w[0]).join('').slice(0, 2)}</span><span><strong>{r.name}</strong>{r.location && <small>{r.location}</small>}</span></figcaption>
+    </figure>
+  );
+}
+
+// marquee: an endless, pausable strip (home page). Otherwise a plain grid.
+export function ReviewList({ limit, marquee }) {
+  const { data } = useApi('/api/reviews');
+  if (!data) return <div className="reviews"><div className="review skeleton" /><div className="review skeleton" /></div>;
+  if (!data.length) return <p className="muted">Reviews will appear here once they are added.</p>;
+  const list = data.slice(0, limit);
+  if (!marquee) return <Reveal className="reviews" data-each="">{list.map((r, i) => <Review key={i} r={r} />)}</Reveal>;
+  return (
+    <div className="marquee" tabIndex={0} aria-label="Customer reviews">
+      <div className="marquee-track">
+        {[...list, ...list].map((r, i) => <div key={i} aria-hidden={i >= list.length || undefined}><Review r={r} /></div>)}
+      </div>
     </div>
   );
 }
@@ -241,70 +263,55 @@ export function PageHead({ eyebrow, title, children }) {
   );
 }
 
+export function RouteError() {
+  return (
+    <div className="wrap empty">
+      <h1>Something went wrong on this page</h1>
+      <p>Refresh to try again. If it keeps happening, message us on WhatsApp.</p>
+      <button className="btn btn-amber" onClick={() => location.reload()}>Refresh the page</button>
+    </div>
+  );
+}
+
 export function ErrorState({ error, what = 'page' }) {
   const missing = error?.message === 'not-found';
   return (
     <div className="wrap empty">
       <h1>{missing ? `This ${what} isn’t here` : `We couldn’t load this ${what}`}</h1>
       <p>{missing ? 'It may have been moved or unpublished.' : 'Check your connection and refresh the page.'}</p>
-      <Link className="btn btn-dark" to="/">Go to the home page</Link>
+      <Link className="btn btn-amber" to="/">Go to the home page</Link>
     </div>
   );
 }
 
-/* ---------- Trip composer: the milestone card ---------- */
-const TRIPS = ['Airport', 'Outstation', 'Within city', 'Event'];
-const DRIVE = ['Self-drive', 'With driver'];
+/* ---------- Quick enquiry: pickup, drop, car → WhatsApp ---------- */
+export function TripComposer({ site, vehicles, fixedCar, title = 'Get a quote on WhatsApp' }) {
+  const [t, setT] = useState({ from: '', to: '', car: fixedCar || '' });
+  const set = (k) => (e) => setT((s) => ({ ...s, [k]: e.target.value }));
+  const message = site ? tripMessage(site.whatsappMessage, t) : '';
+  const formLink = `/contact?${new URLSearchParams(Object.entries({ vehicle: t.car, pickupLocation: t.from, destination: t.to }).filter(([, v]) => v))}#enquiry`;
 
-function Chips({ label, options, value, onChange }) {
+  function send(e) {
+    e.preventDefault();
+    if (site) window.open(waLink(site.whatsappNumber, message), '_blank', 'noopener');
+  }
+
   return (
-    <fieldset className="chips">
-      <legend>{label}</legend>
-      {options.map((o) => (
-        <label key={o} className="chip">
-          <input type="radio" name={label} value={o} checked={value === o} onChange={() => onChange(o)} onClick={() => value === o && onChange('')} />
-          <span>{o}</span>
+    <form className="composer" onSubmit={send} aria-labelledby="composer-title">
+      <h2 id="composer-title" className="composer-title">{title}</h2>
+      <label className="field field-icon"><span>Pickup</span><Icon name="pin" size={18} /><input value={t.from} onChange={set('from')} placeholder="e.g. Airport T2" maxLength={120} required /></label>
+      <label className="field field-icon"><span>Drop-off</span><Icon name="pin" size={18} /><input value={t.to} onChange={set('to')} placeholder="e.g. Lonavala" maxLength={120} /></label>
+      {!fixedCar && (
+        <label className="field field-icon"><span>Car</span><Icon name="car" size={18} />
+          <select value={t.car} onChange={set('car')}>
+            <option value="">Any car — suggest one</option>
+            {vehicles?.map((v) => <option key={v.slug} value={v.name}>{v.name} · {v.category}</option>)}
+          </select>
         </label>
-      ))}
-    </fieldset>
-  );
-}
-
-export function TripComposer({ site, vehicles, fixedCar, title = 'Plan your trip' }) {
-  const [t, setT] = useState({ trip: '', drive: '', car: fixedCar || '', from: '', to: '', start: '', end: '' });
-  const set = (k) => (v) => setT((s) => ({ ...s, [k]: v?.target ? v.target.value : v }));
-  const cars = useMemo(() => [...new Set((vehicles || []).map((v) => v.category))], [vehicles]);
-  const message = site ? tripMessage(site.whatsappMessage, { ...t, trip: [t.trip, t.drive].filter(Boolean).join(', ') }) : '';
-  const formLink = `/contact?${new URLSearchParams(Object.entries({ vehicle: fixedCar || '', pickupLocation: t.from, destination: t.to, pickupDate: t.start, returnDate: t.end }).filter(([, v]) => v))}#enquiry`;
-
-  return (
-    <section className="milestone" aria-labelledby="composer-title">
-      <div className="milestone-cap">
-        <span className="km">0 km</span>
-        <h2 id="composer-title">{title}</h2>
-      </div>
-      <div className="milestone-body">
-        <Chips label="Trip" options={TRIPS} value={t.trip} onChange={set('trip')} />
-        <Chips label="Driving" options={DRIVE} value={t.drive} onChange={set('drive')} />
-        {!fixedCar && cars.length > 0 && <Chips label="Car" options={cars} value={t.car} onChange={set('car')} />}
-        <div className="field-row">
-          <label className="field"><span>Pickup from</span><input value={t.from} onChange={set('from')} placeholder="e.g. Airport T2" maxLength={120} /></label>
-          <label className="field"><span>Going to</span><input value={t.to} onChange={set('to')} placeholder="e.g. Lonavala" maxLength={120} /></label>
-        </div>
-        <div className="field-row">
-          <label className="field"><span>From date</span><input type="date" value={t.start} min={today()} onChange={set('start')} /></label>
-          <label className="field"><span>To date</span><input type="date" value={t.end} min={t.start || today()} onChange={set('end')} /></label>
-        </div>
-        <div className="preview" aria-live="polite">
-          <span className="preview-to">Message to {site?.businessName || 'Drive Ease'}</span>
-          <p>{message}</p>
-        </div>
-        <a className="btn btn-wa btn-block" href={site ? waLink(site.whatsappNumber, message) : undefined} target="_blank" rel="noreferrer">
-          <Icon name="whatsapp" />Send on WhatsApp
-        </a>
-        <Link className="composer-alt" to={formLink}>Prefer email? Send an enquiry form instead</Link>
-      </div>
-    </section>
+      )}
+      <button className="btn btn-amber btn-block btn-lg"><Icon name="whatsapp" />Enquire now</button>
+      <Link className="composer-alt" to={formLink}>Prefer a callback? Send the enquiry form</Link>
+    </form>
   );
 }
 
@@ -339,7 +346,7 @@ export function EnquiryForm({ site, initial = {} }) {
       <span className="done-icon"><Icon name="check" size={28} /></span>
       <h3>Enquiry sent</h3>
       <p>Thanks, {values.name.split(' ')[0]}. We’ll get back to you on {values.phone}.</p>
-      {site && <a className="btn btn-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />Need it sooner? WhatsApp us</a>}
+      {site && <a className="btn btn-amber" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />Need it sooner? WhatsApp us</a>}
     </div>
   );
 
@@ -379,7 +386,7 @@ export function EnquiryForm({ site, initial = {} }) {
       </label>
       <input className="hp" name="company" tabIndex="-1" autoComplete="off" aria-hidden="true" />
       {status === 'failed' && <p className="form-alert" role="alert">Your enquiry didn’t go through. Check your connection and try again{site ? ', or message us on WhatsApp' : ''}.</p>}
-      <button className="btn btn-dark btn-block" disabled={status === 'sending'}>{status === 'sending' ? 'Sending…' : 'Send enquiry'}</button>
+      <button className="btn btn-amber btn-block" disabled={status === 'sending'}>{status === 'sending' ? 'Sending…' : 'Send enquiry'}</button>
       <p className="fine">We only use these details to reply to your enquiry.</p>
     </form>
   );

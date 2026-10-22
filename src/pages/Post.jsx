@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { marked } from 'marked';
 import { ErrorState, Photo, Seo } from '../components.jsx';
 import { formatDate, useApi } from '../lib.js';
+import { postMeta } from '../seo.js';
 import { CtaBand } from './Home.jsx';
 
 export default function Post() {
@@ -17,7 +18,7 @@ export default function Post() {
   const minutes = Math.max(1, Math.round(p.body.split(/\s+/).length / 200));
   return (
     <>
-      <Seo title={p.title} description={p.excerpt} />
+      <Seo {...postMeta(p)} />
       <article className="article">
         <header className="wrap-narrow article-head">
           <nav className="crumbs" aria-label="Breadcrumb"><Link to="/blog">Blog</Link></nav>

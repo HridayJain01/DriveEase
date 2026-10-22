@@ -2,14 +2,20 @@
   "name": "drive-ease",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently -k -n api,web -c yellow,green \"node --watch --env-file-if-exists=.env server/dev.js\" \"vite\"",
     "build": "vite build",
+    "start": "node --env-file-if-exists=.env server/dev.js",
     "test": "node --test server/*.test.js",
     "seed": "node --env-file=.env server/seed.js"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "express": "^5.3.0",
+    "gsap": "^3.15.0",
     "marked": "^18.1.1",
     "mongoose": "^9.11.3",
     "react": "^19.3.1",

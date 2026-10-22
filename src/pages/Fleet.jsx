@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router';
 import { CardSkeletons, ErrorState, PageHead, Seo, VehicleCard } from '../components.jsx';
 import { useApi } from '../lib.js';
+import { PAGES } from '../seo.js';
 
 export default function Fleet() {
   const { data: site } = useApi('/api/site');
@@ -14,7 +15,7 @@ export default function Fleet() {
 
   return (
     <>
-      <Seo title="Our fleet" description="Hatchbacks, sedans, SUVs and seven-seaters — see the cars, specs and rates, then enquire on WhatsApp." />
+      <Seo {...PAGES['/fleet']} />
       <PageHead eyebrow="The fleet" title="Find the car that fits the trip.">
         <p>Every car can be enquired about straight from its card — the model is added to your WhatsApp message.</p>
       </PageHead>
@@ -26,6 +27,7 @@ export default function Fleet() {
             </button>
           ))}
         </div>
+        <h2 className="sr-only">{type ? `${type} cars` : 'All cars'}</h2>
         <div className="car-grid">
           {shown ? shown.map((v) => <VehicleCard key={v.slug} v={v} site={site} />) : <CardSkeletons n={6} />}
         </div>

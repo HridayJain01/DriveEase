@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 // Tiny fetch cache: every page that asks for the same URL shares one request,
 // and revisits render instantly from memory.
-const settled = new Map();
+const settled = new Map(Object.entries(globalThis.__DATA__ || {})); // embedded by the server on first load
 const inflight = new Map();
 
 export function fetchJson(url) {
@@ -29,7 +29,11 @@ export function useApi(url) {
   return state;
 }
 
-export const waLink = (number, text) => `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+// wa.me needs the country code; a bare 10-digit Indian mobile number gets 91 added.
+export const waLink = (number, text) => {
+  const digits = String(number).replace(/\D/g, '');
+  return `https://wa.me/${digits.length === 10 ? `91${digits}` : digits}?text=${encodeURIComponent(text)}`;
+};
 export const telLink = (phone) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
 // Resizes Unsplash/Cloudinary images on their CDNs so we never ship a 4000px photo to a phone.
@@ -49,7 +53,7 @@ export function tripMessage(base, t) {
     t.trip && `Trip: ${t.trip}`,
     t.car && `Car: ${t.car}`,
     t.from && `Pickup: ${t.from}`,
-    t.to && `Destination: ${t.to}`,
+    t.to && `Drop-off: ${t.to}`,
     (t.start || t.end) && `Dates: ${[t.start, t.end].filter(Boolean).map((d) => formatDate(d, { day: 'numeric', month: 'short' })).join(' → ')}`,
   ].filter(Boolean);
   return lines.length ? `${base}\n\n${lines.join('\n')}\n\nPlease share availability and rates.` : base;

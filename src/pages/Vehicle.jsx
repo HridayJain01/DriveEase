@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ErrorState, Icon, Photo, Rate, Seo, Specs, TripComposer, VehicleCard } from '../components.jsx';
 import { img, useApi } from '../lib.js';
+import { vehicleMeta } from '../seo.js';
 
 export default function Vehicle() {
   const { slug } = useParams();
@@ -14,22 +15,23 @@ export default function Vehicle() {
   if (!v) return <div className="wrap vehicle-skeleton skeleton" aria-busy="true" />;
 
   const images = v.images?.length ? v.images : [''];
+  const shown = images[active] ?? images[0];
   const similar = all?.filter((x) => x.slug !== v.slug && x.category === v.category).slice(0, 3) || [];
 
   return (
     <>
-      <Seo title={`${v.name} rental`} description={`${v.name} — ${v.category.toLowerCase()}, ${v.seats} seats, ${v.fuel.toLowerCase()} ${v.transmission.toLowerCase()}. ${v.summary}`} />
+      <Seo {...vehicleMeta(v)} />
       <div className="wrap">
         <nav className="crumbs" aria-label="Breadcrumb"><Link to="/fleet">Fleet</Link><span aria-hidden="true">/</span><span aria-current="page">{v.name}</span></nav>
       </div>
       <section className="wrap vehicle">
         <div className="vehicle-main">
           <div className="gallery">
-            <Photo key={images[active]} src={images[active]} alt={`${v.name} — photo ${active + 1} of ${images.length}`} className="gallery-main" sizes="(max-width: 900px) 100vw, 60vw" eager />
+            <Photo key={shown} src={shown} alt={`${v.name} — photo ${images.indexOf(shown) + 1} of ${images.length}`} className="gallery-main" sizes="(max-width: 900px) 100vw, 60vw" eager />
             {images.length > 1 && (
               <div className="thumbs">
                 {images.map((src, i) => (
-                  <button key={src} aria-label={`Show photo ${i + 1}`} aria-pressed={i === active} onClick={() => setActive(i)}>
+                  <button key={src} aria-label={`Show photo ${i + 1}`} aria-pressed={src === shown} onClick={() => setActive(i)}>
                     <img src={img(src, 200)} alt="" loading="lazy" />
                   </button>
                 ))}
@@ -50,9 +52,9 @@ export default function Vehicle() {
             )}
           </div>
         </div>
-        <aside className="vehicle-side">
+        <div className="vehicle-side">
           <TripComposer site={site} fixedCar={v.name} title="Enquire about this car" />
-        </aside>
+        </div>
       </section>
       {similar.length > 0 && (
         <section className="section wrap" aria-labelledby="similar-h">

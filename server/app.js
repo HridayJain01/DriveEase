@@ -1,36 +1,28 @@
 import express from 'express';
-import { Admin, connectDb, Enquiry, LoginAttempt, Post, Review, Settings, Vehicle } from './db.js';
+import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, Settings, Vehicle } from './db.js';
+import { renderPage, robots, sitemap } from './html.js';
 import { clearSession, hashPassword, readSession, setSession, verifyPassword } from './auth.js';
 import { validateEnquiry } from './enquiry.js';
+import { cloudinaryConfig, signParams } from './cloudinary.js';
 
 const app = express();
 app.use(express.json({ limit: '200kb' }));
-app.use('/api', async (req, res, next) => { await connectDb(); next(); });
+app.use(async (req, res, next) => { await connectDb(); next(); });
 
 /* ---------- Public ---------- */
-const hidden = '-_id -__v -key -createdAt -updatedAt';
+// Visitors' browsers revalidate every time; Vercel's CDN may serve a copy up to 10 s old while it refreshes.
+const shared = (res) => res.set('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=300');
+const found = (res, doc, what) => (doc ? shared(res).json(doc) : res.status(404).json({ error: `${what} not found` }));
 
 app.get('/api/site', async (req, res) => {
-  const site = await Settings.findOne({ key: 'site' }).select(hidden).lean();
-  site ? res.json(site) : res.status(503).json({ error: 'Site details are not set up yet. Run npm run seed.' });
+  const site = await read.site();
+  site ? shared(res).json(site) : res.status(503).json({ error: 'Site details are not set up yet. Run npm run seed.' });
 });
-
-app.get('/api/vehicles', async (req, res) =>
-  res.json(await Vehicle.find({ published: true }).sort({ order: 1, createdAt: 1 }).select(hidden).lean()));
-app.get('/api/vehicles/:slug', async (req, res) => {
-  const v = await Vehicle.findOne({ slug: req.params.slug, published: true }).select(hidden).lean();
-  v ? res.json(v) : res.status(404).json({ error: 'Vehicle not found' });
-});
-
-app.get('/api/posts', async (req, res) =>
-  res.json(await Post.find({ published: true }).sort({ publishedAt: -1 }).select(`${hidden} -body`).lean()));
-app.get('/api/posts/:slug', async (req, res) => {
-  const p = await Post.findOne({ slug: req.params.slug, published: true }).select(hidden).lean();
-  p ? res.json(p) : res.status(404).json({ error: 'Post not found' });
-});
-
-app.get('/api/reviews', async (req, res) =>
-  res.json(await Review.find({ published: true }).sort({ order: 1, createdAt: -1 }).select(hidden).lean()));
+app.get('/api/vehicles', async (req, res) => shared(res).json(await read.vehicles()));
+app.get('/api/vehicles/:slug', async (req, res) => found(res, await read.vehicle(req.params.slug), 'Vehicle'));
+app.get('/api/posts', async (req, res) => shared(res).json(await read.posts()));
+app.get('/api/posts/:slug', async (req, res) => found(res, await read.post(req.params.slug), 'Post'));
+app.get('/api/reviews', async (req, res) => shared(res).json(await read.reviews()));
 
 app.post('/api/enquiries', async (req, res) => {
   if (req.body?.company) return res.json({ ok: true }); // honeypot: bots fill hidden fields
@@ -125,8 +117,22 @@ admin.patch('/enquiries/:id', async (req, res) => {
 });
 admin.delete('/enquiries/:id', async (req, res) => { await Enquiry.findByIdAndDelete(req.params.id); res.sendStatus(204); });
 
+// Photos upload straight from the browser to Cloudinary; the server only signs the request,
+// so the API secret never leaves the server and big files never hit our function's size limit.
+admin.post('/uploads/sign', (req, res) => {
+  const cfg = cloudinaryConfig();
+  if (!cfg) return res.status(503).json({ error: 'Photo uploads aren’t set up yet. Paste an image link instead, or add CLOUDINARY_URL to the server settings.' });
+  const params = { folder: 'driveease', timestamp: Math.round(Date.now() / 1000) };
+  res.json({ cloudName: cfg.cloud, apiKey: cfg.key, ...params, signature: signParams(params, cfg.secret) });
+});
+
 app.use('/api/admin', admin);
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+/* ---------- Pages ---------- */
+app.get('/robots.txt', robots);
+app.get('/sitemap.xml', sitemap);
+app.get('/{*path}', renderPage);
 
 /* ---------- Errors ---------- */
 app.use((err, req, res, next) => {

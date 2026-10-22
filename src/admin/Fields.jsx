@@ -1,8 +1,10 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { marked } from 'marked';
 import { img } from '../lib.js';
+import { api, uploadImage } from './api.js';
 
 // Renders a field config (see config.js) against a value object. Nested types recurse.
+// onChange always receives an updater function, so slow uploads never overwrite edits made meanwhile.
 export function Fields({ fields, value, onChange, errors, path = '' }) {
   return fields.map((f, i) => <Field key={f.name || f.section || i} f={f} value={value || {}} onChange={onChange} errors={errors} path={path} />);
 }
@@ -19,7 +21,7 @@ function Field({ f, value, onChange, errors, path }) {
   );
 
   const v = value[f.name];
-  const set = (next) => onChange({ ...value, [f.name]: next });
+  const set = (next) => onChange((prev = {}) => ({ ...prev, [f.name]: typeof next === 'function' ? next(prev[f.name]) : next }));
   const key = path + f.name;
   const err = errors?.[key] || Object.entries(errors || {}).find(([k]) => k.startsWith(`${key}.`))?.[1];
 
@@ -55,9 +57,9 @@ function Field({ f, value, onChange, errors, path }) {
     case 'email':
       control = <input {...common} type="email" value={v ?? ''} onChange={(e) => set(e.target.value)} />; break;
     case 'image':
-      return <Wrap f={f} err={err} as="div"><ImageList images={v ? [v] : []} onChange={(list) => set(list[0] || '')} single /></Wrap>;
+      return <Wrap f={f} err={err} as="div"><ImageList images={v ? [v] : []} onChange={(fn) => set((prev) => fn(prev ? [prev] : [])[0] || '')} single /></Wrap>;
     case 'images':
-      return <Wrap f={f} err={err} as="div"><ImageList images={v || []} onChange={set} /></Wrap>;
+      return <Wrap f={f} err={err} as="div"><ImageList images={v || []} onChange={(fn) => set((prev) => fn(prev || []))} /></Wrap>;
     case 'markdown':
       return <Wrap f={f} err={err} as="div"><Markdown value={v || ''} onChange={set} /></Wrap>;
     default:
@@ -88,7 +90,7 @@ function Wrap({ f, err, htmlFor, as = 'label', children }) {
 }
 
 function ListField({ f, items, set, errors, path }) {
-  const move = (i, d) => { const next = [...items]; [next[i], next[i + d]] = [next[i + d], next[i]]; set(next); };
+  const move = (i, d) => set((list = []) => { const next = [...list]; [next[i], next[i + d]] = [next[i + d], next[i]]; return next; });
   return (
     <div className="a-list">
       {f.label && <span className="a-label">{f.label}</span>}
@@ -99,50 +101,100 @@ function ListField({ f, items, set, errors, path }) {
             <span>
               <button type="button" className="a-icon-btn" onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${f.item} up`}>↑</button>
               <button type="button" className="a-icon-btn" onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={`Move ${f.item} down`}>↓</button>
-              <button type="button" className="a-icon-btn danger" onClick={() => set(items.filter((_, j) => j !== i))} aria-label={`Remove ${f.item}`}>✕</button>
+              <button type="button" className="a-icon-btn danger" onClick={() => set((list = []) => list.filter((_, j) => j !== i))} aria-label={`Remove ${f.item}`}>✕</button>
             </span>
           </div>
-          <Fields fields={f.fields} value={item} onChange={(next) => set(items.map((x, j) => (j === i ? next : x)))} errors={errors} path={`${path}.${i}.`} />
+          <Fields fields={f.fields} value={item} onChange={(next) => set((list = []) => list.map((x, j) => (j === i ? (typeof next === 'function' ? next(x) : next) : x)))} errors={errors} path={`${path}.${i}.`} />
         </div>
       ))}
-      <button type="button" className="a-btn a-btn-ghost" onClick={() => set([...items, { ...f.blank }])}>+ Add {f.item}</button>
+      <button type="button" className="a-btn a-btn-ghost" onClick={() => set((list = []) => [...list, { ...f.blank }])}>+ Add {f.item}</button>
     </div>
   );
 }
 
+// Photos: upload (button or drag-and-drop) straight to Cloudinary, or paste a link.
 function ImageList({ images, onChange, single }) {
+  const [uploads, setUploads] = useState([]); // in-flight: { id, name, progress }
+  const [msg, setMsg] = useState('');
+  const [dragging, setDragging] = useState(false);
   const [draft, setDraft] = useState('');
-  const [bad, setBad] = useState('');
-  function add(e) {
+
+  async function upload(fileList) {
+    let files = [...fileList].filter((f) => f.type.startsWith('image/') || /\.hei[cf]$/i.test(f.name));
+    if (!files.length) return setMsg('Choose image files: JPG, PNG, WebP or HEIC.');
+    if (single) files = files.slice(0, 1);
+    setMsg('');
+    let sig;
+    try { sig = await api('POST', '/api/admin/uploads/sign'); } catch (e) { return setMsg(e.message); }
+    await Promise.all(files.map(async (file) => {
+      const id = Math.random();
+      setUploads((u) => [...u, { id, name: file.name, progress: 0 }]);
+      try {
+        const url = await uploadImage(file, sig, (p) => setUploads((u) => u.map((x) => (x.id === id ? { ...x, progress: p } : x))));
+        onChange((list) => (single ? [url] : [...list, url]));
+      } catch (e) { setMsg(e.message); }
+      finally { setUploads((u) => u.filter((x) => x.id !== id)); }
+    }));
+  }
+
+  function addLink(e) {
     e.preventDefault();
     const url = draft.trim();
-    if (!/^https:\/\/\S+$/.test(url)) return setBad('Paste a full https:// image link.');
-    onChange(single ? [url] : [...images, url]);
-    setDraft(''); setBad('');
+    if (!/^https:\/\/\S+$/.test(url)) return setMsg('Paste a full https:// image link.');
+    onChange((list) => (single ? [url] : [...list, url]));
+    setDraft(''); setMsg('');
   }
+
+  const picker = (label, cls) => (
+    <label className={cls}>
+      <input type="file" accept="image/*,.heic,.heif" multiple={!single} onChange={(e) => { upload(e.target.files); e.target.value = ''; }} />
+      {label}
+    </label>
+  );
+  const empty = images.length === 0 && uploads.length === 0;
+
   return (
-    <div className="a-images">
-      {images.length > 0 && (
+    <div
+      className={`a-images${dragging ? ' is-dragging' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget) && setDragging(false)}
+      onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files); }}
+    >
+      {!empty && (
         <ul className="a-thumbs">
           {images.map((src, i) => (
             <li key={src + i}>
               <img src={img(src, 300)} alt="" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
               {!single && i === 0 && <span className="a-cover">Cover</span>}
               <span className="a-thumb-actions">
-                {!single && i > 0 && <button type="button" onClick={() => onChange([src, ...images.filter((_, j) => j !== i)])}>Make cover</button>}
-                <button type="button" onClick={() => onChange(images.filter((_, j) => j !== i))}>Remove</button>
+                {!single && i > 0 && <button type="button" onClick={() => onChange((list) => [src, ...list.filter((x) => x !== src)])}>Make cover</button>}
+                {single && picker('Replace', 'a-thumb-btn')}
+                <button type="button" onClick={() => onChange((list) => list.filter((x) => x !== src))}>Remove</button>
               </span>
+            </li>
+          ))}
+          {uploads.map((u) => (
+            <li key={u.id} className="a-uploading" aria-label={`Uploading ${u.name}`}>
+              <span>{u.progress < 1 ? `${Math.round(u.progress * 100)}%` : 'Processing…'}</span>
+              <progress max="1" value={u.progress} />
             </li>
           ))}
         </ul>
       )}
-      {(!single || images.length === 0) && (
-        <div className="a-add-image">
-          <input type="url" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add(e)} placeholder="Paste an image link (https://…)" aria-label="Image link" />
-          <button type="button" className="a-btn a-btn-ghost" onClick={add}>Add photo</button>
+      {(!single || empty) && (
+        <div className="a-dropzone">
+          {picker(single ? 'Upload a photo' : 'Upload photos', 'btn btn-dark btn-sm a-upload')}
+          <span className="a-hint">or drag {single ? 'one' : 'them'} here. JPG, PNG, WebP or HEIC, up to 20 MB.</span>
         </div>
       )}
-      {bad && <small className="a-error">{bad}</small>}
+      <details className="a-paste">
+        <summary>Paste an image link instead</summary>
+        <div className="a-add-image">
+          <input type="url" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addLink(e)} placeholder="https://…" aria-label="Image link" />
+          <button type="button" className="a-btn a-btn-ghost" onClick={addLink}>Add</button>
+        </div>
+      </details>
+      {msg && <small className="a-error" role="alert">{msg}</small>}
     </div>
   );
 }

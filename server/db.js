@@ -1,12 +1,13 @@
 import mongoose from 'mongoose';
 
 const { Schema, model, models } = mongoose;
+mongoose.Error.messages.general.required = 'Fill in this field.';
 
 // Serverless functions reuse warm instances, so one connection promise is shared per instance.
 let connecting;
 export function connectDb() {
   if (!process.env.MONGODB_URI) return Promise.reject(new Error('MONGODB_URI is not set. Copy .env.example to .env and fill it in.'));
-  connecting ??= mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 8000 }).catch((e) => { connecting = null; throw e; });
+  connecting ??= mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 8000, maxPoolSize: 5 }).catch((e) => { connecting = null; throw e; });
   return connecting;
 }
 
@@ -115,3 +116,15 @@ export const Settings = models.Settings || model('Settings', settingsSchema);
 export const Enquiry = models.Enquiry || model('Enquiry', enquirySchema);
 export const Admin = models.Admin || model('Admin', adminSchema);
 export const LoginAttempt = models.LoginAttempt || model('LoginAttempt', loginAttemptSchema);
+
+// Published content as visitors see it. Used by the JSON API and by the server-rendered page shell,
+// so both always return exactly the same data.
+const hidden = '-_id -__v -key -createdAt -updatedAt';
+export const publicData = {
+  site: () => Settings.findOne({ key: 'site' }).select(hidden).lean(),
+  vehicles: () => Vehicle.find({ published: true }).sort({ order: 1, createdAt: 1 }).select(hidden).lean(),
+  vehicle: (slug) => Vehicle.findOne({ slug, published: true }).select(hidden).lean(),
+  posts: () => Post.find({ published: true }).sort({ publishedAt: -1 }).select(`${hidden} -body`).lean(),
+  post: (slug) => Post.findOne({ slug, published: true }).select(hidden).lean(),
+  reviews: () => Review.find({ published: true }).sort({ order: 1, createdAt: -1 }).select(hidden).lean(),
+};

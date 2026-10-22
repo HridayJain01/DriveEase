@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router';
 import { EnquiryForm, Icon, PageHead, ReviewList, Seo } from '../components.jsx';
 import { telLink, useApi, waLink } from '../lib.js';
+import { PAGES } from '../seo.js';
 
 export default function Contact() {
   const { data: site } = useApi('/api/site');
@@ -8,7 +9,7 @@ export default function Contact() {
 
   return (
     <>
-      <Seo title="Contact & reviews" description="Call, WhatsApp or send an enquiry to Drive Ease — and read what other travellers say." />
+      <Seo {...PAGES['/contact']} />
       <PageHead eyebrow="Contact" title="Talk to a real person.">
         <p>WhatsApp is the fastest way to reach us. Prefer a form? Fill it in and we’ll call or message you back.</p>
       </PageHead>

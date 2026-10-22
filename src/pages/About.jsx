@@ -1,5 +1,6 @@
 import { ErrorState, PageHead, Photo, Seo } from '../components.jsx';
 import { useApi } from '../lib.js';
+import { PAGES } from '../seo.js';
 import { CtaBand } from './Home.jsx';
 
 export default function About() {
@@ -9,7 +10,7 @@ export default function About() {
 
   return (
     <>
-      <Seo title="About us" description="The story behind Drive Ease and the people who answer when you message." />
+      <Seo {...PAGES['/about']} />
       <PageHead eyebrow="About us" title="Renting a car should feel like borrowing one from a friend." />
       {a && (
         <>

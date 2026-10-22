@@ -1,5 +1,6 @@
 import { ErrorState, Icon, PageHead, Seo } from '../components.jsx';
 import { useApi, waLink } from '../lib.js';
+import { PAGES } from '../seo.js';
 import { CtaBand } from './Home.jsx';
 
 export default function Services() {
@@ -8,7 +9,7 @@ export default function Services() {
 
   return (
     <>
-      <Seo title="Services" description="Self-drive and chauffeur-driven rentals, airport transfers, outstation trips, events and monthly rentals." />
+      <Seo {...PAGES['/services']} />
       <PageHead eyebrow="Services" title="One fleet, every kind of trip.">
         <p>Tell us how you’re travelling and we’ll match the car — and a driver, if you want one.</p>
       </PageHead>
@@ -21,7 +22,7 @@ export default function Services() {
                 <div>
                   <p className="service-summary">{s.summary}</p>
                   <p>{s.details}</p>
-                  <a className="btn btn-wa btn-sm" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer">
+                  <a className="btn btn-amber btn-sm" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer">
                     <Icon name="whatsapp" size={16} />Ask about {s.name.toLowerCase()}
                   </a>
                 </div>
