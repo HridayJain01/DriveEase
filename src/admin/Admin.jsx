@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes, useBlocker, useNavigate, useParams } from 'react-router';
 import { Icon } from '../components.jsx';
-import { clearCache, img, telLink, useApi, waLink } from '../lib.js';
+import { clearCache, img } from '../lib.js';
 import { collections, settingsFields } from './config.js';
 import { Fields } from './Fields.jsx';
 import { api, toast } from './api.js';
+import Enquiries from './Enquiries.jsx';
 import './admin.css';
 
 /* ---------- Helpers ---------- */
@@ -41,14 +42,6 @@ function useUnsavedGuard(dirtyRef) {
     return () => removeEventListener('beforeunload', on);
   }, [dirtyRef]);
 }
-
-const ago = (iso) => {
-  const mins = Math.round((Date.now() - new Date(iso)) / 60000);
-  const rtf = new Intl.RelativeTimeFormat('en-IN', { numeric: 'auto' });
-  if (mins < 60) return rtf.format(-mins, 'minute');
-  if (mins < 1440) return rtf.format(-Math.round(mins / 60), 'hour');
-  return rtf.format(-Math.round(mins / 1440), 'day');
-};
 
 /* ---------- Shell ---------- */
 export default function AdminApp() {
@@ -128,68 +121,6 @@ function Login({ onSignedIn }) {
         <Link className="a-back-site" to="/">Back to the website</Link>
       </form>
     </div>
-  );
-}
-
-/* ---------- Enquiries ---------- */
-const STATUSES = [['new', 'New'], ['contacted', 'Contacted'], ['closed', 'Closed']];
-
-function Enquiries() {
-  const [{ data, error }, setData] = useLoad('/api/admin/enquiries');
-  const { data: site } = useApi('/api/site');
-  const [tab, setTab] = useState('new');
-  const count = (s) => data?.filter((e) => e.status === s).length ?? '';
-  const shown = data?.filter((e) => tab === 'all' || e.status === tab);
-
-  async function setStatus(e, status) {
-    const saved = await api('PATCH', `/api/admin/enquiries/${e._id}`, { status }).catch((err) => toast(err.message, 'bad'));
-    if (saved) { setData(data.map((x) => (x._id === e._id ? saved : x))); toast(`Marked as ${status}`); }
-  }
-  async function remove(e) {
-    if (!confirm(`Delete the enquiry from ${e.name}? This can’t be undone.`)) return;
-    await api('DELETE', `/api/admin/enquiries/${e._id}`).then(() => { setData(data.filter((x) => x._id !== e._id)); toast('Enquiry deleted'); }, (err) => toast(err.message, 'bad'));
-  }
-  const waNumber = (phone) => { const d = phone.replace(/\D/g, ''); return d.length === 10 ? `91${d}` : d; };
-
-  return (
-    <>
-      <header className="a-head"><h1>Enquiries</h1><p>Messages sent through the website form. WhatsApp chats stay in WhatsApp.</p></header>
-      <div className="a-tabs" role="tablist">
-        {[...STATUSES, ['all', 'All']].map(([s, label]) => (
-          <button key={s} role="tab" aria-selected={tab === s} onClick={() => setTab(s)}>{label}<small>{s === 'all' ? data?.length ?? '' : count(s)}</small></button>
-        ))}
-      </div>
-      {error && <p className="a-empty">{error.message}</p>}
-      {!data && !error && <div className="a-skel" />}
-      {shown?.length === 0 && <p className="a-empty">{tab === 'new' ? 'No new enquiries. Form submissions from the website will appear here.' : 'Nothing here yet.'}</p>}
-      <div className="a-enquiries">
-        {shown?.map((e) => (
-          <article key={e._id} className={`a-enquiry is-${e.status}`}>
-            <header>
-              <div><h2>{e.name}</h2><time dateTime={e.createdAt} title={new Date(e.createdAt).toLocaleString('en-IN')}>{ago(e.createdAt)}</time></div>
-              <select value={e.status} onChange={(ev) => setStatus(e, ev.target.value)} aria-label={`Status of ${e.name}’s enquiry`}>
-                {STATUSES.map(([s, label]) => <option key={s} value={s}>{label}</option>)}
-              </select>
-            </header>
-            <dl>
-              <div><dt>Phone</dt><dd><a href={telLink(e.phone)}>{e.phone}</a></dd></div>
-              {e.email && <div><dt>Email</dt><dd><a href={`mailto:${e.email}`}>{e.email}</a></dd></div>}
-              {e.vehicle && <div><dt>Car</dt><dd>{e.vehicle}</dd></div>}
-              {(e.pickupDate || e.returnDate) && <div><dt>Dates</dt><dd>{[e.pickupDate, e.returnDate].filter(Boolean).join(' → ')}</dd></div>}
-              {(e.pickupLocation || e.destination) && <div><dt>Route</dt><dd>{[e.pickupLocation, e.destination].filter(Boolean).join(' → ')}</dd></div>}
-            </dl>
-            {e.message && <p className="a-message">{e.message}</p>}
-            <footer>
-              <a className="btn btn-wa btn-sm" target="_blank" rel="noreferrer" href={waLink(waNumber(e.phone), `Hi ${e.name.split(' ')[0]}, this is ${site?.businessName || 'Drive Ease'} replying to your enquiry${e.vehicle ? ` about the ${e.vehicle}` : ''}.`)}>
-                <Icon name="whatsapp" size={16} />Reply on WhatsApp
-              </a>
-              <a className="btn btn-ghost btn-sm" href={telLink(e.phone)}><Icon name="phone" size={16} />Call</a>
-              <button type="button" className="a-link danger" onClick={() => remove(e)}>Delete</button>
-            </footer>
-          </article>
-        ))}
-      </div>
-    </>
   );
 }
 

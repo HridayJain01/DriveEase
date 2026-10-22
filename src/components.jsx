@@ -1,38 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
 import { img, srcSet, telLink, today, tripMessage, useApi, waLink } from './lib.js';
 import { Reveal, ScrollTrigger } from './motion.jsx';
+import { Icon } from './icons.jsx';
+import { Announcer, CompareButton, CompareTray, EnquireButton, EnquiryDialog, SaveButton } from './features.jsx';
+import { garage, useStore } from './stores.js';
+import { whatsappUrl } from './whatsapp.js';
 
-/* ---------- Icons ---------- */
-const paths = {
-  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
-  phone: <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />,
-  seats: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
-  bags: <><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></>,
-  fuel: <><path d="M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18" /><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.8a2 2 0 0 0-.6-1.4L18 5" /></>,
-  gears: <path d="M6 5v14M12 5v14M18 5v7H6" />,
-  menu: <path d="M4 8h16M4 16h16" />,
-  close: <path d="M6 6l12 12M18 6 6 18" />,
-  mail: <><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" /></>,
-  pin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></>,
-  clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
-  car: <><path d="M19 17h2a1 1 0 0 0 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5a1.7 1.7 0 0 0-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4a1 1 0 0 0 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></>,
-  check: <path d="m5 12 5 5L20 7" />,
-  down: <path d="M12 5v14M6 13l6 6 6-6" />,
-  key: <><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14 9l2 2" /></>,
-};
-
-export function Icon({ name, size = 20 }) {
-  if (name === 'whatsapp') return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.18-1.42-.08-.12-.28-.2-.57-.35m-5.42 7.4h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.83 9.83 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.88 9.88m8.41-18.3A11.82 11.82 0 0 0 12.05 0C5.5 0 .16 5.34.16 11.89c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.68 1.45h.01c6.55 0 11.89-5.34 11.89-11.89a11.82 11.82 0 0 0-3.48-8.41z" /></svg>
-  );
-  if (name === 'star') return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
-  );
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
-  );
-}
+export { Icon };
 
 /* ---------- Brand ---------- */
 export function Logo() {
@@ -54,6 +29,7 @@ export function Seo({ title, fullTitle, description }) {
 
 /* ---------- Layout ---------- */
 const nav = [
+  ['/concierge', 'Concierge'],
   ['/fleet', 'Fleet'],
   ['/services', 'Services'],
   ['/about', 'About'],
@@ -94,6 +70,7 @@ export function Layout() {
           <nav className="main-nav" aria-label="Main">
             {nav.map(([to, label]) => <NavLink key={to} to={to}>{label}</NavLink>)}
           </nav>
+          <GarageLink />
           {site && (
             <a className="pill-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp">
               <Icon name="whatsapp" size={18} /><span>Enquire</span>
@@ -105,7 +82,7 @@ export function Layout() {
         </div>
       </header>
       <nav id="menu" className="menu-sheet" aria-label="Menu" hidden={!open}>
-        {[['/', 'Home'], ...nav].map(([to, label], i) => (
+        {[['/', 'Home'], ...nav, ['/garage', 'My Garage']].map(([to, label], i) => (
           <Link key={to} to={to} style={{ '--i': i }}><small>0{i + 1}</small>{label}</Link>
         ))}
         {site && (
@@ -118,8 +95,20 @@ export function Layout() {
       <main id="main"><Outlet /></main>
       {site && <Footer site={site} />}
       {site && <Dock site={site} />}
+      <CompareTray />
+      <EnquiryDialog site={site} />
+      <Announcer />
       <ScrollRestoration />
     </>
+  );
+}
+
+function GarageLink() {
+  const n = useStore(garage).length;
+  return (
+    <NavLink to="/garage" className="pill-garage" aria-label={`My Garage, ${n} saved ${n === 1 ? 'car' : 'cars'}`} title="My Garage">
+      <Icon name="heart" size={18} filled={n > 0} />{n > 0 && <b aria-hidden="true">{n}</b>}
+    </NavLink>
   );
 }
 
@@ -131,7 +120,7 @@ function Footer({ site }) {
         <div className="footer-grid">
           <div>
             <h2 className="label">Explore</h2>
-            <ul>{nav.map(([to, label]) => <li key={to}><Link to={to}>{label}</Link></li>)}<li><Link to="/contact#reviews">Reviews</Link></li></ul>
+            <ul>{nav.map(([to, label]) => <li key={to}><Link to={to}>{label}</Link></li>)}<li><Link to="/compare">Compare cars</Link></li><li><Link to="/garage">My Garage</Link></li><li><Link to="/contact#reviews">Reviews</Link></li></ul>
           </div>
           <div>
             <h2 className="label">Talk to us</h2>
@@ -177,13 +166,16 @@ export function Photo({ src, alt, sizes = '(max-width: 700px) 100vw, 50vw', clas
   return <img className={className} src={img(src, 800)} srcSet={srcSet(src)} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setBroken(true)} />;
 }
 
+// A spec the admin hasn't filled in shows as a dash ("not listed" to screen readers), never a guess.
+export const spec = (value) => (value === undefined || value === null || value === '' ? <span title="Not listed"><span aria-hidden="true">—</span><span className="sr-only">Not listed</span></span> : value);
+
 export function Specs({ v }) {
   return (
     <dl className="specs">
-      <div><dt>Seats</dt><dd>{v.seats}</dd></div>
-      <div><dt>Bags</dt><dd>{v.bags}</dd></div>
-      <div><dt>Fuel</dt><dd>{v.fuel}</dd></div>
-      <div><dt>Gearbox</dt><dd>{v.transmission === 'Automatic' ? 'Auto' : v.transmission}</dd></div>
+      <div><dt>Seats</dt><dd>{spec(v.seats)}</dd></div>
+      <div><dt>Bags</dt><dd>{spec(v.bags)}</dd></div>
+      <div><dt>Fuel</dt><dd>{spec(v.fuel)}</dd></div>
+      <div><dt>Gearbox</dt><dd>{spec(v.transmission === 'Automatic' ? 'Auto' : v.transmission)}</dd></div>
     </dl>
   );
 }
@@ -194,25 +186,26 @@ export function Rate({ rate }) {
   return <span className="rate"><strong>{amount.trim()}</strong>{unit && <small>/ {unit.trim()}</small>}</span>;
 }
 
-export function VehicleCard({ v, site }) {
+export function VehicleCard({ v, site, children }) {
   return (
     <article className="car-card">
       <div className="car-media">
-        <Photo src={v.images?.[0]} alt={`${v.name}, ${v.category.toLowerCase()}`} sizes="(max-width: 700px) 86vw, 400px" />
-        <span className="car-tag">{v.category}</span>
+        <Photo src={v.images?.[0]} alt={`${v.name}, ${(v.category || 'car').toLowerCase()}`} sizes="(max-width: 700px) 86vw, 400px" />
+        {v.category && <span className="car-tag">{v.category}</span>}
         {v.featured && <span className="car-badge">Featured</span>}
+        <SaveButton v={v} className="lift" />
       </div>
       <div className="car-body">
         <h3><Link to={`/fleet/${v.slug}`} className="stretch">{v.name}</Link></h3>
-        <p className="car-summary">{v.summary}</p>
+        {v.summary && <p className="car-summary">{v.summary}</p>}
+        {children}
         <Specs v={v} />
         <div className="car-foot">
           <Rate rate={v.rate} />
-          {site && (
-            <a className="btn btn-amber btn-sm lift" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nCar: ${v.name}`)} target="_blank" rel="noreferrer" aria-label={`Enquire about the ${v.name} on WhatsApp`}>
-              <Icon name="whatsapp" size={16} />Enquire
-            </a>
-          )}
+          <span className="car-actions lift">
+            <CompareButton v={v} />
+            <EnquireButton cars={[v]} source="car-page" label={`Enquire about the ${v.name}`} />
+          </span>
         </div>
       </div>
     </article>
@@ -291,9 +284,11 @@ export function TripComposer({ site, vehicles, fixedCar, title = 'Get a quote on
   const message = site ? tripMessage(site.whatsappMessage, t) : '';
   const formLink = `/contact?${new URLSearchParams(Object.entries({ vehicle: t.car, pickupLocation: t.from, destination: t.to }).filter(([, v]) => v))}#enquiry`;
 
+  const navigate = useNavigate();
   function send(e) {
     e.preventDefault();
-    if (site) window.open(waLink(site.whatsappNumber, message), '_blank', 'noopener');
+    const url = site && whatsappUrl(site.whatsappNumber, message);
+    url ? window.open(url, '_blank', 'noopener') : navigate(formLink); // no WhatsApp number configured: use the form
   }
 
   return (
@@ -316,7 +311,7 @@ export function TripComposer({ site, vehicles, fixedCar, title = 'Get a quote on
 }
 
 /* ---------- Enquiry form ---------- */
-const FIELDS = ['name', 'phone', 'email', 'vehicle', 'pickupDate', 'returnDate', 'pickupLocation', 'destination', 'message'];
+const FIELDS = ['name', 'phone', 'email', 'vehicle', 'pickupDate', 'returnDate', 'pickupLocation', 'destination', 'passengers', 'luggage', 'message', 'tripType', 'source'];
 
 export function EnquiryForm({ site, initial = {} }) {
   const { data: vehicles } = useApi('/api/vehicles');
@@ -369,6 +364,7 @@ export function EnquiryForm({ site, initial = {} }) {
         <span>Car you’re interested in</span>
         <select name="vehicle" value={values.vehicle} onChange={set('vehicle')}>
           <option value="">Not sure yet — suggest one</option>
+          {values.vehicle && vehicles && !vehicles.some((v) => v.name === values.vehicle) && <option value={values.vehicle}>{values.vehicle}</option>}
           {vehicles?.map((v) => <option key={v.slug} value={v.name}>{v.name} · {v.category}</option>)}
         </select>
       </label>
@@ -380,9 +376,13 @@ export function EnquiryForm({ site, initial = {} }) {
         {field('pickupLocation', 'Pickup location', { maxLength: 120 })}
         {field('destination', 'Destination', { maxLength: 120 })}
       </div>
+      <div className="field-row">
+        {field('passengers', 'Travellers', { type: 'number', inputMode: 'numeric', min: 1, max: 60, placeholder: 'e.g. 4' })}
+        {field('luggage', 'Bags', { type: 'number', inputMode: 'numeric', min: 0, max: 30, placeholder: 'e.g. 2' })}
+      </div>
       <label className="field">
         <span>Anything else?</span>
-        <textarea name="message" rows="3" value={values.message} onChange={set('message')} maxLength={1000} placeholder="Number of travellers, luggage, timing…" />
+        <textarea name="message" rows="3" value={values.message} onChange={set('message')} maxLength={1000} placeholder="Timing, child seat, chauffeur…" />
       </label>
       <input className="hp" name="company" tabIndex="-1" autoComplete="off" aria-hidden="true" />
       {status === 'failed' && <p className="form-alert" role="alert">Your enquiry didn’t go through. Check your connection and try again{site ? ', or message us on WhatsApp' : ''}.</p>}

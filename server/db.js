@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { STATUSES } from './enquiry.js';
 
 const { Schema, model, models } = mongoose;
 mongoose.Error.messages.general.required = 'Fill in this field.';
@@ -35,7 +36,9 @@ const vehicleSchema = new Schema({
   summary: text(160),
   description: text(2000),
   features: [text(80)],
-  images: [url()],
+  images: [url()], // exterior; the first is the cover
+  interiorImages: [url()], // seats and dashboard
+  bootImages: [url()], // boot and luggage space
   featured: { type: Boolean, default: false },
   published: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
@@ -43,7 +46,7 @@ const vehicleSchema = new Schema({
 vehicleSchema.pre('validate', slugFrom('name'));
 vehicleSchema.pre('validate', function () {
   this.features = this.features.filter(Boolean);
-  this.images = this.images.filter(Boolean);
+  for (const k of ['images', 'interiorImages', 'bootImages']) this[k] = this[k].filter(Boolean);
 });
 
 const postSchema = new Schema({
@@ -95,11 +98,18 @@ settingsSchema.pre('validate', function () {
   for (const s of this.services) s.slug = slugify(s.slug || s.name);
 });
 
+// New fields are optional, so enquiries saved before they existed stay valid (no migration needed).
 const enquirySchema = new Schema({
   name: String, phone: String, email: String, vehicle: String,
   pickupDate: String, returnDate: String, pickupLocation: String, destination: String, message: String,
-  status: { type: String, enum: ['new', 'contacted', 'closed'], default: 'new' },
+  passengers: Number, luggage: Number, tripType: String,
+  source: { type: String, default: 'form' },
+  status: { type: String, enum: STATUSES, default: 'new' },
+  followUpDate: { type: String, default: '' }, // yyyy-mm-dd, set by staff
+  notes: [new Schema({ text: String, by: String, at: { type: Date, default: Date.now } })], // internal only
 }, opts);
+enquirySchema.index({ status: 1, createdAt: -1 });
+enquirySchema.index({ createdAt: -1 });
 
 const adminSchema = new Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },

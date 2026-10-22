@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const api = 'http://localhost:3001';
+const api = `http://localhost:${process.env.API_PORT || 3001}`;
 
 // The built index.html is renamed so every page request reaches the server, which fills in
 // each page's meta tags (server/html.js). `npm run dev` still uses index.html as normal.

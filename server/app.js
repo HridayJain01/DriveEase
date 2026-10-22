@@ -2,7 +2,7 @@ import express from 'express';
 import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, Settings, Vehicle } from './db.js';
 import { renderPage, robots, sitemap } from './html.js';
 import { clearSession, hashPassword, readSession, setSession, verifyPassword } from './auth.js';
-import { validateEnquiry } from './enquiry.js';
+import { dueFilter, enquiryFilter, pageParams, STATUSES, validateEnquiry, validateEnquiryUpdate, validateNote } from './enquiry.js';
 import { cloudinaryConfig, signParams } from './cloudinary.js';
 
 const app = express();
@@ -108,12 +108,34 @@ admin.put('/settings', async (req, res) => {
   res.json(await doc.save());
 });
 
-admin.get('/enquiries', async (req, res) => res.json(await Enquiry.find().sort({ createdAt: -1 }).limit(500).lean()));
+// Enquiry dashboard: one page of results plus counts per status, all computed from stored records.
+admin.get('/enquiries', async (req, res) => {
+  const { limit, page, skip } = pageParams(req.query);
+  const today = /^\d{4}-\d{2}-\d{2}$/.test(req.query.today || '') ? req.query.today : new Date().toISOString().slice(0, 10);
+  const filter = enquiryFilter({ ...req.query, today });
+  const [items, total, byStatus, due] = await Promise.all([
+    Enquiry.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Enquiry.countDocuments(filter),
+    Enquiry.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
+    Enquiry.countDocuments(dueFilter(today)),
+  ]);
+  const counts = Object.fromEntries(STATUSES.map((s) => [s, 0]));
+  for (const { _id, n } of byStatus) if (_id in counts) counts[_id] = n;
+  counts.all = Object.values(counts).reduce((a, b) => a + b, 0);
+  counts.due = due;
+  res.set('Cache-Control', 'no-store').json({ items, total, page, pages: Math.max(1, Math.ceil(total / limit)), limit, counts });
+});
 admin.patch('/enquiries/:id', async (req, res) => {
-  const doc = await Enquiry.findById(req.params.id);
-  if (!doc) return res.status(404).json({ error: 'Not found' });
-  doc.status = req.body?.status;
-  res.json(await doc.save());
+  const { data, errors } = validateEnquiryUpdate(req.body);
+  if (Object.keys(errors).length) return res.status(400).json({ errors, error: Object.values(errors)[0] });
+  const doc = await Enquiry.findByIdAndUpdate(req.params.id, { $set: data }, { new: true, runValidators: true }).lean();
+  doc ? res.json(doc) : res.status(404).json({ error: 'Not found' });
+});
+admin.post('/enquiries/:id/notes', async (req, res) => {
+  const { text, error } = validateNote(req.body);
+  if (error) return res.status(400).json({ error, errors: { text: error } });
+  const doc = await Enquiry.findByIdAndUpdate(req.params.id, { $push: { notes: { text, by: req.admin.email } } }, { new: true }).lean();
+  doc ? res.status(201).json(doc) : res.status(404).json({ error: 'Not found' });
 });
 admin.delete('/enquiries/:id', async (req, res) => { await Enquiry.findByIdAndDelete(req.params.id); res.sendStatus(204); });
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { CardSkeletons, Icon, Rate, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
 import { formatDate, img, telLink, tripMessage, useApi, waLink } from '../lib.js';
 import { calm, Count, gsap, Reveal, ScrollTrigger, useGSAP, useSplitReveal } from '../motion.jsx';
+import { TRIPS } from '../concierge/match.js';
 
 const lowestRate = (vs) => {
   const nums = vs.map((v) => Number(v.rate?.replace(/[^\d]/g, ''))).filter(Boolean);
@@ -20,6 +21,7 @@ export default function Home() {
     <>
       <Seo fullTitle={site && `${site.businessName} — Car rentals${site.city ? ` in ${site.city}` : ''}`} description={site?.tagline} />
       <Hero site={site} vehicles={vehicles} lead={lead} />
+      <ConciergeBand vehicles={vehicles} />
       {site && lead && <Story site={site} car={lead} />}
       <FleetRail site={site} vehicles={vehicles} />
       {site?.services?.length > 0 && <WaysToRent site={site} />}
@@ -73,7 +75,10 @@ function Hero({ site, vehicles, lead }) {
         <p className="hero-rise status"><i aria-hidden="true" />Car rentals{site?.city ? ` · ${site.city}` : ''}</p>
         <h1 ref={title} className="hero-title">Tell us the trip. <em>We’ll sort the car.</em></h1>
         <div className="hero-rise hero-form"><TripComposer site={site} vehicles={vehicles} /></div>
-        <Link className="hero-rise link-arrow hero-fleet" to="/fleet">Browse all {vehicles?.length || ''} cars<Icon name="arrow" size={16} /></Link>
+        <p className="hero-rise hero-links">
+          <Link className="link-arrow hero-concierge" to="/concierge"><Icon name="spark" size={16} />Not sure which car? Ask the Concierge</Link>
+          <Link className="link-arrow hero-fleet" to="/fleet">Browse all {vehicles?.length || ''} cars<Icon name="arrow" size={16} /></Link>
+        </p>
         {vehicles?.length > 0 && (
           <dl className="hero-rise readouts">
             <div><dt>Cars</dt><dd><Count to={vehicles.length} pad={2} /></dd></div>
@@ -83,6 +88,34 @@ function Hero({ site, vehicles, lead }) {
         )}
         <a className="hero-rise scroll-cue" href="#story">Scroll to see how it works<Icon name="down" size={16} /></a>
       </div>
+    </section>
+  );
+}
+
+/* ---------- Concierge: the signature feature ---------- */
+function ConciergeBand({ vehicles }) {
+  return (
+    <section className="section wrap concierge-band" aria-labelledby="concierge-h">
+      <Reveal className="concierge-copy">
+        <p className="eyebrow">Drive Ease Concierge</p>
+        <h2 id="concierge-h">Four questions. <em>The right car.</em></h2>
+        <p className="lede">Tell us the trip, who’s coming and how much luggage. The Concierge checks every car{vehicles?.length ? ` in our fleet of ${vehicles.length}` : ''} and explains which fit and why. Then compare, save or ask us on WhatsApp.</p>
+        <ol className="concierge-steps">
+          <li><b>01</b>Your trip</li>
+          <li><b>02</b>Matched cars, with reasons</li>
+          <li><b>03</b>Compare or save</li>
+          <li><b>04</b>Enquire on WhatsApp</li>
+        </ol>
+      </Reveal>
+      <Reveal className="concierge-start">
+        <p className="label">Start with your trip</p>
+        <div className="concierge-trips">
+          {TRIPS.map((t) => (
+            <Link key={t.id} to={`/concierge?trip=${t.id}`}><strong>{t.label}</strong><small>{t.hint}</small></Link>
+          ))}
+        </div>
+        <Link className="btn btn-amber btn-block btn-lg" to="/concierge"><Icon name="spark" size={18} />Start the Concierge</Link>
+      </Reveal>
     </section>
   );
 }

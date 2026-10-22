@@ -122,7 +122,7 @@ export async function sitemap(req, res) {
   const [vehicles, posts] = await Promise.all([read.vehicles(), read.posts()]);
   const day = (d) => d && new Date(d).toISOString().slice(0, 10);
   const urls = [
-    ['/'], ['/fleet'], ['/services'], ['/about'], ['/blog'], ['/contact'],
+    ['/'], ['/concierge'], ['/fleet'], ['/services'], ['/about'], ['/blog'], ['/contact'],
     ...vehicles.map((v) => [`/fleet/${v.slug}`]),
     ...posts.map((p) => [`/blog/${p.slug}`, day(p.publishedAt)]),
   ];

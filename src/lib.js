@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { whatsappUrl } from './whatsapp.js';
 
 // Tiny fetch cache: every page that asks for the same URL shares one request,
 // and revisits render instantly from memory.
@@ -29,11 +30,8 @@ export function useApi(url) {
   return state;
 }
 
-// wa.me needs the country code; a bare 10-digit Indian mobile number gets 91 added.
-export const waLink = (number, text) => {
-  const digits = String(number).replace(/\D/g, '');
-  return `https://wa.me/${digits.length === 10 ? `91${digits}` : digits}?text=${encodeURIComponent(text)}`;
-};
+// General "chat with us" links. If no usable WhatsApp number is configured they fall back to the enquiry form.
+export const waLink = (number, text) => whatsappUrl(number, text) || '/contact#enquiry';
 export const telLink = (phone) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
 // Resizes Unsplash/Cloudinary images on their CDNs so we never ship a 4000px photo to a phone.

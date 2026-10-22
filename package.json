@@ -7,9 +7,10 @@
   },
   "scripts": {
     "dev": "concurrently -k -n api,web -c yellow,green \"node --watch --env-file-if-exists=.env server/dev.js\" \"vite\"",
+    "demo": "node scripts/demo.js",
     "build": "vite build",
     "start": "node --env-file-if-exists=.env server/dev.js",
-    "test": "node --test server/*.test.js",
+    "test": "node --test \"server/*.test.js\" \"src/**/*.test.js\"",
     "seed": "node --env-file=.env server/seed.js"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.6",
+    "mongodb-memory-server-core": "^11.3.0",
     "vite": "^8.3.5"
   }
 }

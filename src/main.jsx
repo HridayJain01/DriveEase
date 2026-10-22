@@ -15,6 +15,10 @@ import './styles.css';
 
 const Admin = lazy(() => import('./admin/Admin.jsx')); // separate chunk: visitors never download the admin
 const Post = lazy(() => import('./pages/Post.jsx')); // keeps the Markdown renderer out of the main bundle
+const Concierge = lazy(() => import('./pages/Concierge.jsx'));
+const Compare = lazy(() => import('./pages/Compare.jsx'));
+const Garage = lazy(() => import('./pages/Garage.jsx'));
+const page = (el) => <Suspense fallback={<div className="wrap skeleton" style={{ height: '60vh', marginTop: 120 }} aria-busy="true" />}>{el}</Suspense>;
 
 // Warm the cache for data almost every page needs.
 ['/api/site', '/api/vehicles'].forEach((u) => fetchJson(u).catch(() => {}));
@@ -33,6 +37,9 @@ const router = createBrowserRouter([
       { path: '/blog', element: <Blog /> },
       { path: '/blog/:slug', element: <Suspense fallback={<div className="wrap skeleton" style={{ height: '60vh', marginTop: 40 }} />}><Post /></Suspense> },
       { path: '/contact', element: <Contact /> },
+      { path: '/concierge', element: page(<Concierge />) },
+      { path: '/compare', element: page(<Compare />) },
+      { path: '/garage', element: page(<Garage />) },
       { path: '*', element: <NotFound /> },
     ],
   },

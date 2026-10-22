@@ -8,11 +8,14 @@ This guide covers everyday updates to the Drive Ease website. You don't need any
 
 ## Enquiries: check these daily
 
-Everything sent through the website's enquiry form arrives here. WhatsApp messages don't come here; they arrive in your WhatsApp Business app as usual.
+Everything sent through the website's enquiry form arrives here, including forms customers send from the Concierge, a car page or their saved cars (the card shows where it came from, the trip type, travellers and bags). WhatsApp messages don't come here; they arrive in your WhatsApp Business app as usual. Opening WhatsApp from the website doesn't create an enquiry here.
 
-1. Open **Enquiries**. The **New** tab shows enquiries nobody has handled yet. A yellow edge marks an unhandled one.
+1. Open **Enquiries**. The boxes at the top count your enquiries by status. Tap one to show only those. **New** shows enquiries nobody has handled yet.
 2. Tap **Reply on WhatsApp** to open a chat with that customer, already greeting them by name and naming the car they asked about. Or tap **Call**.
-3. Change the status to **Contacted** once you've replied, and to **Closed** when the enquiry is done (booked or not). This keeps the New tab short.
+3. Move the status along as you go: **Contacted** → **Quote sent** → **Confirmed**, or **Closed** when it's done without a booking.
+4. **Follow up on:** pick a date to remind yourself. On that day the enquiry appears under **Follow-ups due** (until it's Confirmed or Closed).
+5. **Internal notes:** open them on any enquiry to write what was agreed. Only signed-in staff can see notes; customers never do.
+6. Use the search box to find an enquiry by name, phone number, email, car or place.
 
 ## Cars
 
@@ -21,12 +24,17 @@ Everything sent through the website's enquiry form arrives here. WhatsApp messag
 2. Change what you need. The bar at the bottom says *Unsaved changes*.
 3. Tap **Save changes**. The website updates within about a minute.
 
-**Photos:** tap **Upload photos** or drag photos onto the box.
-- The first photo is the **cover**, shown on the fleet page. Use **Make cover** to change it.
+**Photos:** tap **Upload photos** or drag photos onto the box. There are three sets, and each gets its own tab on the car's page:
+- **Exterior photos.** The first one is the **cover**, shown on the fleet page. Use **Make cover** to change it.
+- **Interior & dashboard photos.** Seats, dashboard and cabin.
+- **Boot & luggage photos.** The open boot, ideally with a couple of bags in it.
+- Only use real photos of your own cars. If a set is empty, the car's page tells customers to ask you for photos.
 - Landscape photos taken in daylight look best. The website crops them to a 3:2 shape, so keep the whole car in frame with some space around it.
 - Phone photos are fine. They are resized automatically before uploading.
 
-**Rate:** type it the way you want it shown, e.g. `₹2,400 / day`. Leave it empty to show **"Rate on request"**.
+**Rate:** type it the way you want it shown, e.g. `₹2,400 / day`. Leave it empty to show **"Rate on request"**. Write it as one daily price (`₹2,400 / day`) so the Concierge can match it to a customer's budget. Other wording still shows, but the Concierge will tell customers it couldn't check the budget.
+
+**Seats and Bags:** keep these accurate. The Concierge never suggests a car with fewer seats or less boot space than the customer needs.
 
 **Hide a car for a while** (in service, sold out for the season): turn **Published** off and save. It disappears from the website but keeps all its details. Turn it back on later. Only use **Delete** for cars you no longer have. Deleting can't be undone.
 
@@ -69,6 +77,6 @@ Tap **Save changes** at the bottom when you're done.
 ### Good to know
 
 - Changes appear on the website within about a minute. If you don't see one, refresh the page.
-- The website collects enquiries only. Bookings, payments and availability are handled by you, on WhatsApp or by phone.
+- The website collects enquiries only. Bookings, payments and availability are handled by you, on WhatsApp or by phone. The Concierge only suggests cars from what you've entered; it never promises availability.
 - After 10 wrong passwords, sign-in pauses for 15 minutes.
 - If you try to leave a page with unsaved changes, you'll be asked to confirm first.
