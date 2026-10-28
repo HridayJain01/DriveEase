@@ -1,6 +1,6 @@
 import { ErrorState, PageHead, Photo, Seo } from '../components.jsx';
 import { useApi } from '../lib.js';
-import { PAGES } from '../seo.js';
+import { pageMeta } from '../seo.js';
 import { CtaBand } from './Home.jsx';
 
 export default function About() {
@@ -10,8 +10,8 @@ export default function About() {
 
   return (
     <>
-      <Seo {...PAGES['/about']} />
-      <PageHead eyebrow="About us" title="Renting a car should feel like borrowing one from a friend." />
+      <Seo {...pageMeta('/about', site)} />
+      <PageHead h1={pageMeta('/about', site).h1} title="Renting a car should feel like borrowing one from a friend." />
       {a && (
         <>
           <section className="wrap about-grid">

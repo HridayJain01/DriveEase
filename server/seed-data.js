@@ -1,40 +1,40 @@
-// SAMPLE CONTENT for previews. Every name, number, rate, review and policy here is a
-// placeholder: replace it with client-approved content (PRD §13) before launch.
+// SAMPLE CONTENT for previews. The phone, WhatsApp number and email are the client's; every other
+// name, review and policy here is a placeholder: replace it with client-approved content (PRD §13) before launch.
 const unsplash = (id) => `https://images.unsplash.com/photo-${id}`;
 
 export const site = {
   businessName: 'Drive Ease',
   tagline: 'Car rentals for airport runs, weekend getaways and everything in between.',
   city: 'Your city',
-  phone: '+91 98765 43210',
-  whatsappNumber: '919876543210',
+  phone: '+91 88797 90490',
+  whatsappNumber: '918879790490',
   whatsappMessage: "Hi Drive Ease, I'd like to enquire about renting a car.",
   whatsappCatalogueUrl: '',
-  email: 'hello@driveease.in',
+  email: 'shreyans342@gmail.com',
   address: 'Shop 4, Example Complex, Main Road, Your city 400001',
   mapUrl: 'https://maps.google.com/?q=Your+city',
   hours: 'Open daily, 7 am – 11 pm',
   socials: { instagram: 'https://instagram.com/', facebook: 'https://facebook.com/' },
   about: {
     story:
-      "Drive Ease started with a simple idea: renting a car should feel as easy as borrowing one from a friend. No long forms, no surprises at pickup — just a clean car, honest rate wording and someone who answers when you message.\n\nToday we look after travellers heading to the airport, families on weekend getaways and teams that need a reliable car for a few days or a few months.",
+      "Drive Ease started with a simple idea: renting a car should feel as easy as borrowing one from a friend. No long forms, no surprises at pickup — just a clean car, straight answers and someone who answers when you message.\n\nToday we look after travellers heading to the airport, families on weekend getaways and teams that need a reliable car for a few days or a few months.",
     founderName: 'Founder name',
     founderRole: 'Founder, Drive Ease',
     founderQuote: 'Every booking starts with a conversation. We would rather spend two minutes understanding your trip than hand you the wrong car.',
     founderPhoto: '',
     promises: [
-      { title: 'Rates in writing', text: 'You see the rate, deposit and kilometre limits in the chat before you confirm.' },
+      { title: 'Everything in writing', text: 'Deposit, kilometre limits and pickup details are confirmed in the chat before you go.' },
       { title: 'Cleaned between trips', text: 'Every car is cleaned and checked before it goes out again.' },
       { title: 'One chat, start to finish', text: 'Enquiry, confirmation and pickup details all live in one WhatsApp thread.' },
     ],
   },
   services: [
-    { slug: 'self-drive', name: 'Self-drive rentals', summary: 'Take the wheel yourself — by the day, weekend or week.', details: 'Choose a car from the fleet, share your licence and ID, and drive on your own schedule. Rates, deposit and kilometre limits are confirmed on WhatsApp before you book.' },
+    { slug: 'self-drive', name: 'Self-drive rentals', summary: 'Take the wheel yourself — by the day, weekend or week.', details: 'Choose a car from the fleet, share your licence and ID, and drive on your own schedule. Deposit and kilometre limits are confirmed on WhatsApp before you book.' },
     { slug: 'chauffeur', name: 'Chauffeur-driven', summary: 'Sit back while an experienced driver handles the road.', details: 'Ideal for long drives, family trips and days packed with meetings. Tell us the route and timing and we will match a car and driver.' },
     { slug: 'airport', name: 'Airport transfers', summary: 'On-time pickups and drops, with room for the luggage.', details: 'Share your flight time and number of bags. We will suggest a car with enough boot space and confirm the pickup point.' },
     { slug: 'outstation', name: 'Outstation trips', summary: 'One-way or round trips to nearby cities and getaways.', details: 'Tell us where you are headed and for how many days. We will recommend a car that suits the road and the group size.' },
     { slug: 'events', name: 'Weddings & events', summary: 'Well-kept cars for the big day and the guests around it.', details: 'From a decorated car for the couple to multiple cars for guest pickups — tell us the dates and we will plan the rest with you.' },
-    { slug: 'monthly', name: 'Monthly & corporate', summary: 'Longer rentals for teams, projects and relocations.', details: 'Need a car for a few weeks or months? Ask about monthly rate wording and what is included.' },
+    { slug: 'monthly', name: 'Monthly & corporate', summary: 'Longer rentals for teams, projects and relocations.', details: 'Need a car for a few weeks or months? Ask us what is included for longer rentals.' },
   ],
   faqs: [
     { q: 'What documents do I need?', a: 'Usually a valid driving licence and a government photo ID for self-drive. We confirm the exact list on WhatsApp before your trip.' },
@@ -48,7 +48,7 @@ export const vehicles = [
   {
     slug: 'maruti-suzuki-swift', name: 'Maruti Suzuki Swift', category: 'Hatchback',
     seats: 5, bags: 2, fuel: 'Petrol', transmission: 'Manual',
-    rate: '₹1,800 / day', featured: false, published: true, order: 1,
+    featured: false, published: true, order: 1,
     images: [unsplash('1663852408695-f57f4d75a536'), unsplash('1663852397535-18292e115327')],
     summary: 'Easy to park, light on fuel — the city all-rounder.',
     description: 'A nimble hatchback for city errands, airport runs and short trips for up to four adults. Compact enough for tight lanes, comfortable enough for a few hours on the highway.',
@@ -57,7 +57,7 @@ export const vehicles = [
   {
     slug: 'hyundai-verna', name: 'Hyundai Verna', category: 'Sedan',
     seats: 5, bags: 3, fuel: 'Petrol', transmission: 'Automatic',
-    rate: '₹2,600 / day', featured: false, published: true, order: 2,
+    featured: false, published: true, order: 2,
     images: [unsplash('1633359064754-804ba55e733f')],
     summary: 'A smooth automatic sedan with a generous boot.',
     description: 'Comfortable for business travel and family trips alike, with a quiet cabin and room for three suitcases.',
@@ -66,7 +66,7 @@ export const vehicles = [
   {
     slug: 'maruti-suzuki-brezza', name: 'Maruti Suzuki Brezza', category: 'SUV',
     seats: 5, bags: 3, fuel: 'Petrol', transmission: 'Manual',
-    rate: '₹2,400 / day', featured: false, published: true, order: 3,
+    featured: false, published: true, order: 3,
     images: [unsplash('1642345810417-eecf7dda339b')],
     summary: 'Compact SUV height without the big-SUV bulk.',
     description: 'Higher seating and good ground clearance for broken roads, with the easy handling of a smaller car.',
@@ -75,7 +75,7 @@ export const vehicles = [
   {
     slug: 'hyundai-creta', name: 'Hyundai Creta', category: 'SUV',
     seats: 5, bags: 3, fuel: 'Diesel', transmission: 'Automatic',
-    rate: '₹3,200 / day', featured: true, published: true, order: 4,
+    featured: true, published: true, order: 4,
     images: [unsplash('1748214547184-d994bfe53322'), unsplash('1748214547306-360d11024747')],
     summary: 'The comfortable SUV for long weekends.',
     description: 'A refined diesel automatic that eats highway kilometres without fuss. Spacious for five with a boot that takes a family’s weekend bags.',
@@ -84,7 +84,7 @@ export const vehicles = [
   {
     slug: 'toyota-innova-crysta', name: 'Toyota Innova Crysta', category: 'MUV',
     seats: 7, bags: 4, fuel: 'Diesel', transmission: 'Manual',
-    rate: '₹3,800 / day', featured: true, published: true, order: 5,
+    featured: true, published: true, order: 5,
     images: [unsplash('1748215210939-ad8b6c8c086d'), unsplash('1748215210950-536c6621629a')],
     summary: 'Seven seats, real luggage space, all-day comfort.',
     description: 'The go-to for family trips, airport pickups with lots of luggage and group travel. Captain seats in the middle row keep long drives comfortable.',
@@ -93,7 +93,7 @@ export const vehicles = [
   {
     slug: 'mahindra-thar', name: 'Mahindra Thar', category: 'SUV',
     seats: 4, bags: 1, fuel: 'Diesel', transmission: 'Manual',
-    rate: '₹4,000 / day', featured: true, published: true, order: 6,
+    featured: true, published: true, order: 6,
     images: [unsplash('1785330865151-f2120b37469c'), unsplash('1710225358761-4f5891df657d'), unsplash('1723306975792-f5a053a59dd3')],
     summary: 'For hill roads, beach runs and weekends that need a story.',
     description: 'A proper 4x4 for the drive itself. Best for two to four people travelling light.',
@@ -102,7 +102,7 @@ export const vehicles = [
   {
     slug: 'toyota-fortuner', name: 'Toyota Fortuner', category: 'SUV',
     seats: 7, bags: 3, fuel: 'Diesel', transmission: 'Automatic',
-    rate: '', featured: false, published: true, order: 7,
+    featured: false, published: true, order: 7,
     images: [unsplash('1664783856972-ac9922d7b2d3')],
     summary: 'Full-size, seven-seat presence for occasions and long hauls.',
     description: 'A commanding seven-seater for weddings, VIP pickups and long highway journeys.',

@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { CardSkeletons, Icon, Rate, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
+import { CardSkeletons, GoogleReviewLink, Icon, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
 import { formatDate, img, telLink, tripMessage, useApi, waLink } from '../lib.js';
 import { calm, Count, gsap, Reveal, ScrollTrigger, useGSAP, useSplitReveal } from '../motion.jsx';
 import { TRIPS } from '../concierge/match.js';
-
-const lowestRate = (vs) => {
-  const nums = vs.map((v) => Number(v.rate?.replace(/[^\d]/g, ''))).filter(Boolean);
-  return nums.length ? Math.min(...nums) : 0;
-};
+import { pageMeta } from '../seo.js';
 
 export default function Home() {
   const { data: site } = useApi('/api/site');
@@ -19,7 +15,7 @@ export default function Home() {
 
   return (
     <>
-      <Seo fullTitle={site && `${site.businessName} — Car rentals${site.city ? ` in ${site.city}` : ''}`} description={site?.tagline} />
+      <Seo {...pageMeta('/', site)} />
       <Hero site={site} vehicles={vehicles} lead={lead} />
       <ConciergeBand vehicles={vehicles} />
       {site && lead && <Story site={site} car={lead} />}
@@ -32,7 +28,10 @@ export default function Home() {
           <Link className="link-arrow" to="/contact#reviews">All reviews<Icon name="arrow" size={18} /></Link>
         </div>
         <ReviewList marquee />
+        <div className="wrap review-cta"><GoogleReviewLink /></div>
       </section>
+
+      {site?.serviceAreas?.length > 0 && <Areas site={site} />}
 
       {site?.faqs?.length > 0 && (
         <section className="section wrap faq-wrap" aria-labelledby="faq-h">
@@ -72,8 +71,8 @@ function Hero({ site, vehicles, lead }) {
         <span className="hero-beam" />
       </div>
       <div className="wrap hero-inner">
-        <p className="hero-rise status"><i aria-hidden="true" />Car rentals{site?.city ? ` · ${site.city}` : ''}</p>
-        <h1 ref={title} className="hero-title">Tell us the trip. <em>We’ll sort the car.</em></h1>
+        <h1 className="hero-rise status"><i aria-hidden="true" />{pageMeta('/', site).h1}</h1>
+        <p ref={title} className="hero-title">Tell us the trip. <em>We’ll sort the car.</em></p>
         <div className="hero-rise hero-form"><TripComposer site={site} vehicles={vehicles} /></div>
         <p className="hero-rise hero-links">
           <Link className="link-arrow hero-concierge" to="/concierge"><Icon name="spark" size={16} />Not sure which car? Ask the Concierge</Link>
@@ -82,12 +81,26 @@ function Hero({ site, vehicles, lead }) {
         {vehicles?.length > 0 && (
           <dl className="hero-rise readouts">
             <div><dt>Cars</dt><dd><Count to={vehicles.length} pad={2} /></dd></div>
-            <div><dt>Seats, max</dt><dd><Count to={Math.max(...vehicles.map((v) => v.seats))} pad={2} /></dd></div>
-            {lowestRate(vehicles) > 0 && <div><dt>From / day</dt><dd>₹<Count to={lowestRate(vehicles)} /></dd></div>}
+            <div><dt>Seats, max</dt><dd><Count to={Math.max(0, ...vehicles.map((v) => Number(v.seats) || 0))} pad={2} /></dd></div>
+            <div><dt>Car types</dt><dd><Count to={new Set(vehicles.map((v) => v.category).filter(Boolean)).size} pad={2} /></dd></div>
           </dl>
         )}
         <a className="hero-rise scroll-cue" href="#story">Scroll to see how it works<Icon name="down" size={16} /></a>
       </div>
+    </section>
+  );
+}
+
+/* ---------- Areas we serve (local search) ---------- */
+function Areas({ site }) {
+  return (
+    <section className="section wrap areas" aria-labelledby="areas-h">
+      <p className="eyebrow">Where we drive</p>
+      <h2 id="areas-h">Car rental across {site.city && !/^your city$/i.test(site.city) ? site.city : 'the city'} and nearby.</h2>
+      <ul className="area-list">
+        {site.serviceAreas.map((a) => <li key={a}><Icon name="pin" size={16} />{a}</li>)}
+      </ul>
+      <p className="muted">Pickup somewhere else? <a data-track="whatsapp" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nPickup area: `)} target="_blank" rel="noreferrer">Ask us on WhatsApp</a>.</p>
     </section>
   );
 }
@@ -124,7 +137,7 @@ function ConciergeBand({ vehicles }) {
 const CHAPTERS = [
   { label: 'Pick', title: 'Pick the car.', text: 'Browse the fleet and tap Enquire on the one you like, or just tell us the trip.' },
   { label: 'Message', title: 'Message us on WhatsApp.', text: 'Your pickup, drop-off and car are typed in for you. One tap to send.' },
-  { label: 'Confirm', title: 'We confirm in the chat.', text: 'Availability, the rate and the documents to keep ready, in writing, before you commit.' },
+  { label: 'Confirm', title: 'We confirm in the chat.', text: 'Availability and the documents to keep ready, in writing, before you commit.' },
   { label: 'Drive', title: 'Collect the keys. Drive.', text: 'Pickup time and place are agreed in the same thread. No app, no account, no payment online.' },
 ];
 
@@ -183,7 +196,6 @@ function Story({ site, car }) {
                   <div>
                     <strong>{car.name}</strong>
                     <span>{car.category} · {car.seats} seats · {car.fuel}</span>
-                    <Rate rate={car.rate} />
                   </div>
                   <span className="mini-cta"><Icon name="whatsapp" size={14} />Enquire</span>
                 </div>
@@ -199,7 +211,7 @@ function Story({ site, car }) {
                   <p className="msg out">{message}<time>10:02</time></p>
                   {step >= 2 && (
                     <p className="msg in">
-                      ✓ The {car.name} is available.{'\n'}Rate: {car.rate || 'shared on request'}{'\n'}Please keep your licence and ID ready.<time>10:06</time>
+                      ✓ The {car.name} is available for your dates.{'\n'}Please keep your licence and ID ready.<time>10:06</time>
                     </p>
                   )}
                   {step >= 3 && (
@@ -267,8 +279,9 @@ function WaysToRent({ site }) {
         <span className="way-index mono">{String(i + 1).padStart(2, '0')} / {String(site.services.length).padStart(2, '0')}</span>
         <h3>{s.name}</h3>
         <p className="way-summary">{s.summary}</p>
-        <p>{s.details}</p>
-        <a className="btn btn-amber" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer">
+        <p>{s.details?.split('\n\n')[0]}</p>
+        <Link className="link-arrow way-more" to={`/services/${s.slug}`}>More about {s.name.toLowerCase()}<Icon name="arrow" size={16} /></Link>
+        <a className="btn btn-amber" data-track="whatsapp" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer">
           <Icon name="whatsapp" />Ask about {s.name.toLowerCase()}
         </a>
       </div>
@@ -285,7 +298,7 @@ export function CtaBand({ site }) {
           <h2>Where to <em>next?</em></h2>
           <p className="lede">Send your dates and destination. We’ll reply with the cars that fit.</p>
           <div className="hero-actions">
-            <a className="btn btn-amber" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />WhatsApp us</a>
+            <a className="btn btn-amber" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />WhatsApp us</a>
             <a className="btn btn-glass" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>
           </div>
         </Reveal>

@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router';
-import { ErrorState, Icon, Rate, Seo, spec, VehicleCard } from '../components.jsx';
-import { CompareButton, EnquireButton, Gallery, SaveButton } from '../features.jsx';
-import { assess, TIERS, tripLabel } from '../concierge/match.js';
+import { ErrorState, Icon, Seo, spec, VehicleCard } from '../components.jsx';
+import { CompareButton, EnquireButton, Gallery, SaveButton, ShareCarButton } from '../features.jsx';
+import { assess, TIERS, tripNoun } from '../concierge/match.js';
 import { useApi } from '../lib.js';
 import { vehicleMeta } from '../seo.js';
 import { trip as tripStore, useStore } from '../stores.js';
@@ -23,7 +23,7 @@ export default function Vehicle() {
 
   return (
     <>
-      <Seo {...vehicleMeta(v)} />
+      <Seo {...vehicleMeta(v, site)} />
       <div className="wrap">
         <nav className="crumbs" aria-label="Breadcrumb"><Link to="/fleet">Fleet</Link><span aria-hidden="true">/</span><span aria-current="page">{v.name}</span></nav>
       </div>
@@ -53,10 +53,10 @@ export default function Vehicle() {
         <aside className="vehicle-side">
           <div className="side-card">
             <h2 className="composer-title">Interested in the {v.name}?</h2>
-            <div className="vehicle-rate"><Rate rate={v.rate} /><span className="muted">Final rate depends on dates and trip, and is confirmed before you book.</span></div>
+            <p className="side-note"><Icon name="whatsapp" size={16} />Message us with your dates. We reply on WhatsApp to confirm availability.</p>
             {fit && (
               <div className={`side-fit tier-${fit.tier}`}>
-                <p><span className={`tier tier-${fit.tier}`}>{TIERS[fit.tier].label}</span> for your {tripLabel(trip.trip).toLowerCase()}</p>
+                <p><span className={`tier tier-${fit.tier}`}>{TIERS[fit.tier].label}</span> for your {tripNoun(trip.trip)}</p>
                 {fit.tier !== 'unsuitable' && fit.why && <p className="muted">{fit.why}</p>}
                 {[...fit.fails, ...fit.misses, ...fit.unverified].slice(0, 3).map((t) => <p key={t} className="cnote">{t}</p>)}
               </div>
@@ -66,6 +66,7 @@ export default function Vehicle() {
               <SaveButton v={v} full />
               <CompareButton v={v} full />
             </div>
+            <ShareCarButton v={v} full className="btn-block" />
             <Link className="composer-alt" to={enquiryFormPath({ cars: [v], trip, source: 'car-page' })}>Prefer a call back? Send the enquiry form</Link>
             {!fit && <Link className="link-arrow side-concierge" to="/concierge"><Icon name="spark" size={16} />Not sure it fits your trip? Ask the Concierge</Link>}
           </div>

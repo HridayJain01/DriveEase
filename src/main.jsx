@@ -18,6 +18,7 @@ const Post = lazy(() => import('./pages/Post.jsx')); // keeps the Markdown rende
 const Concierge = lazy(() => import('./pages/Concierge.jsx'));
 const Compare = lazy(() => import('./pages/Compare.jsx'));
 const Garage = lazy(() => import('./pages/Garage.jsx'));
+const Service = lazy(() => import('./pages/Service.jsx'));
 const page = (el) => <Suspense fallback={<div className="wrap skeleton" style={{ height: '60vh', marginTop: 120 }} aria-busy="true" />}>{el}</Suspense>;
 
 // Warm the cache for data almost every page needs.
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
       { path: '/', element: <Home /> },
       { path: '/about', element: <About /> },
       { path: '/services', element: <Services /> },
+      { path: '/services/:slug', element: page(<Service />) },
       { path: '/fleet', element: <Fleet /> },
       { path: '/fleet/:slug', element: <Vehicle /> },
       { path: '/blog', element: <Blog /> },

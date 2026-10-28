@@ -15,7 +15,7 @@ const { hashPassword } = await import('../server/auth.js');
 const { posts, reviews, site, vehicles } = await import('../server/seed-data.js');
 
 await connectDb();
-await Settings.create(site);
+await Settings.create({ ...site, googleReviewUrl: 'https://g.page/r/demo-review-link' }); // sample link, local demo only
 await Vehicle.create(vehicles);
 await Post.create(posts);
 await Review.create(reviews.map((r, i) => ({ ...r, order: i })));
@@ -26,7 +26,7 @@ await Admin.create({
 const day = (n) => new Date(Date.now() + n * 864e5).toLocaleDateString('en-CA');
 await Enquiry.create([
   { name: 'Sample: Asha Rao', phone: '90000 00001', vehicle: 'Toyota Innova Crysta', pickupLocation: 'Airport T2', destination: 'Lonavala', pickupDate: day(5), returnDate: day(7), passengers: 6, luggage: 4, tripType: 'family', source: 'concierge' },
-  { name: 'Sample: Vikram Shah', phone: '90000 00002', vehicle: 'Hyundai Verna', pickupLocation: 'City centre', tripType: 'business', status: 'quoted', followUpDate: day(0), notes: [{ text: 'Sent the weekday rate.', by: 'admin@demo.test' }] },
+  { name: 'Sample: Vikram Shah', phone: '90000 00002', vehicle: 'Hyundai Verna', pickupLocation: 'City centre', tripType: 'business', status: 'quoted', followUpDate: day(0), notes: [{ text: 'Sent photos of the boot.', by: 'admin@demo.test' }] },
   { name: 'Sample: Meera Iyer', phone: '90000 00003', email: 'meera@example.test', message: 'Need a car for a wedding weekend.', status: 'contacted' },
 ]);
 console.log('Demo database ready with sample content.');

@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router';
 import { CardSkeletons, ErrorState, PageHead, Seo, VehicleCard } from '../components.jsx';
 import { useApi } from '../lib.js';
-import { PAGES } from '../seo.js';
+import { pageMeta } from '../seo.js';
 
 export default function Fleet() {
   const { data: site } = useApi('/api/site');
@@ -15,8 +15,8 @@ export default function Fleet() {
 
   return (
     <>
-      <Seo {...PAGES['/fleet']} />
-      <PageHead eyebrow="The fleet" title="Find the car that fits the trip.">
+      <Seo {...pageMeta('/fleet', site)} />
+      <PageHead h1={pageMeta('/fleet', site).h1} title="Find the car that fits the trip.">
         <p>Every car can be enquired about straight from its card — the model is added to your WhatsApp message.</p>
       </PageHead>
       <div className="wrap">

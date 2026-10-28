@@ -1,5 +1,6 @@
 import express from 'express';
-import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, Settings, Vehicle } from './db.js';
+import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, Settings, Stat, Vehicle } from './db.js';
+import { businessDay, sinceDay, validateEvent } from './events.js';
 import { renderPage, robots, sitemap } from './html.js';
 import { clearSession, hashPassword, readSession, setSession, verifyPassword } from './auth.js';
 import { dueFilter, enquiryFilter, pageParams, STATUSES, validateEnquiry, validateEnquiryUpdate, validateNote } from './enquiry.js';
@@ -7,6 +8,8 @@ import { cloudinaryConfig, signParams } from './cloudinary.js';
 
 const app = express();
 app.use(express.json({ limit: '200kb' }));
+// JSON isn't a page: keep API responses out of search results (Google may still fetch them to render pages).
+app.use('/api', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); });
 app.use(async (req, res, next) => { await connectDb(); next(); });
 
 /* ---------- Public ---------- */
@@ -30,6 +33,17 @@ app.post('/api/enquiries', async (req, res) => {
   if (Object.keys(errors).length) return res.status(400).json({ errors });
   await Enquiry.create(data);
   res.status(201).json({ ok: true });
+});
+
+// Anonymous tap counter. Sent with navigator.sendBeacon, so it never slows the WhatsApp hand-off.
+app.post('/api/events', express.text({ type: '*/*', limit: '1kb' }), async (req, res) => {
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  const { data, error } = validateEvent(body);
+  if (error) return res.status(400).json({ error });
+  if (data.car && !(await Vehicle.exists({ slug: data.car, published: true }))) return res.status(400).json({ error: 'Unknown car.' });
+  await Stat.updateOne({ day: businessDay(), ...data }, { $inc: { n: 1 } }, { upsert: true });
+  res.sendStatus(204);
 });
 
 /* ---------- Auth ---------- */
@@ -138,6 +152,41 @@ admin.post('/enquiries/:id/notes', async (req, res) => {
   doc ? res.status(201).json(doc) : res.status(404).json({ error: 'Not found' });
 });
 admin.delete('/enquiries/:id', async (req, res) => { await Enquiry.findByIdAndDelete(req.params.id); res.sendStatus(204); });
+
+// Insights: WhatsApp taps, shares and enquiry forms per car over the last N days.
+admin.get('/insights', async (req, res) => {
+  const { days, from } = sinceDay(req.query.days);
+  const fromDate = new Date(`${from}T00:00:00+05:30`);
+  const [byCar, bySource, byDay, cars, enquiries] = await Promise.all([
+    Stat.aggregate([{ $match: { day: { $gte: from } } }, { $group: { _id: { car: '$car', kind: '$kind' }, n: { $sum: '$n' } } }]),
+    Stat.aggregate([{ $match: { day: { $gte: from }, kind: 'whatsapp' } }, { $group: { _id: '$source', n: { $sum: '$n' } } }]),
+    Stat.aggregate([{ $match: { day: { $gte: from }, kind: 'whatsapp' } }, { $group: { _id: '$day', n: { $sum: '$n' } } }, { $sort: { _id: 1 } }]),
+    Vehicle.find().select('name slug published').lean(),
+    Enquiry.aggregate([{ $match: { createdAt: { $gte: fromDate } } }, { $group: { _id: '$vehicle', n: { $sum: 1 } } }]),
+  ]);
+  const rows = new Map(cars.map((c) => [c.slug, { slug: c.slug, name: c.name, published: c.published, whatsapp: 0, share: 0, forms: 0 }]));
+  const general = { whatsapp: 0, share: 0 };
+  for (const { _id, n } of byCar) {
+    const row = _id.car ? rows.get(_id.car) : general;
+    if (row) row[_id.kind] += n;
+  }
+  // Enquiry forms name cars by their display name (several cars are comma-separated).
+  let formsTotal = 0;
+  for (const { _id, n } of enquiries) {
+    formsTotal += n;
+    for (const name of String(_id || '').split(',').map((s) => s.trim()).filter(Boolean)) {
+      const row = [...rows.values()].find((r) => r.name === name);
+      if (row) row.forms += n;
+    }
+  }
+  const list = [...rows.values()].sort((a, b) => b.whatsapp + b.share + b.forms - (a.whatsapp + a.share + a.forms) || a.name.localeCompare(b.name));
+  res.set('Cache-Control', 'no-store').json({
+    days, from, cars: list, general,
+    totals: { whatsapp: list.reduce((s, r) => s + r.whatsapp, general.whatsapp), share: list.reduce((s, r) => s + r.share, general.share), forms: formsTotal },
+    sources: Object.fromEntries(bySource.map((s) => [s._id, s.n])),
+    daily: byDay.map((d) => ({ day: d._id, n: d.n })),
+  });
+});
 
 // Photos upload straight from the browser to Cloudinary; the server only signs the request,
 // so the API secret never leaves the server and big files never hit our function's size limit.

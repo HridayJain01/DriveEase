@@ -40,18 +40,27 @@ Hidden (unpublished) items never reach the public API. Sign-in is locked for 15 
 
 | Feature | Where | How it works |
 |---|---|---|
-| **Concierge** | `/concierge`, home page band, hero link | Four short steps (trip type · pickup, destination, dates · travellers and bags · type, gearbox, budget), with progress, Back, editable answers and per-step validation. The step is in the URL, so the browser's back button works. `src/concierge/match.js` scores every published car with transparent rules: seats and bags are critical (a car that lacks them is never a match), type, gearbox and budget are preferences, and the trip type only nudges the order. Every result lists why it fits, what it misses and what couldn't be verified (e.g. a blank rate). If nothing fits, it says so and offers the closest options and WhatsApp. Budgets are checked only against rates written as a single daily price, e.g. `₹2,400 / day`. |
+| **Concierge** | `/concierge`, home page band, hero link | Four short steps (trip type · pickup, destination, dates · travellers and bags · type and gearbox), with progress, Back, editable answers and per-step validation. The step is in the URL, so the browser's back button works. `src/concierge/match.js` scores every published car with transparent rules: seats and bags are critical (a car that lacks them is never a match), type and gearbox are preferences, and the trip type only nudges the order (and only on the car's own specs, e.g. spare boot space for an airport run). Every result lists why it fits, what it misses and what couldn't be verified (e.g. a blank spec). If nothing fits, it says so and offers the closest options and WhatsApp. Only answers from steps the customer completed are remembered and added to WhatsApp messages. |
 | **Smart WhatsApp enquiry** | every Enquire button (cards, car page, Concierge, Compare, My Garage) | `src/whatsapp.js` builds the message from the car(s) and the trip details the customer actually gave. A review sheet lets them edit and copy it before opening `wa.me` with the number from Site details. It states plainly that nothing is sent or booked yet. If no usable number is configured, the sheet offers the enquiry form, phone and email instead. The sheet also links to the enquiry form with the same details pre-filled: that form is the only way an enquiry reaches the dashboard. |
-| **Compare** | `/compare`, compare toggles, floating tray | Up to 3 cars, no duplicates. Rows for type, rate, seats, bags, gearbox, fuel, photos and features, with differences marked, the best value highlighted (only verified numbers) and an "only differences" switch. If the visitor used the Concierge, a row shows how each car suits their trip. Stacks into narrow columns on phones. |
+| **Compare** | `/compare`, compare toggles, floating tray | Up to 3 cars, no duplicates. Rows for type, seats, bags, gearbox, fuel, photos and features, with differences marked, the most seats and bags highlighted and an "only differences" switch. If the visitor used the Concierge, a row shows how each car suits their trip. Stacks into narrow columns on phones. |
 | **Car page preview** | `/fleet/:slug` | Gallery grouped into Exterior, Interior & dashboard, and Boot & luggage, with thumbnails, arrows, keyboard arrows, and a full-screen viewer (Esc closes, focus returns). Missing photo groups and specs say so instead of guessing. |
 | **My Garage** | `/garage`, heart on every car, count in the top bar | Saved in this browser's localStorage (no account). Remove, compare, enquire about all, share via the phone's share sheet / copy, or send to a friend on WhatsApp. A shared link (`/garage?cars=slug,slug`) carries only public car slugs; it opens as a read-only shortlist the recipient can save. Cars that are no longer listed are flagged with a remove option. |
+
+| **QR code for computers** | WhatsApp review sheet, Contact page | On a large screen with a mouse, a QR code of the same WhatsApp link is shown, so a visitor on a laptop can scan it and continue on their phone. The QR library (`uqr`, 10 KB, no dependencies) loads only when a QR is shown. |
+| **Send to family** | car pages, Concierge results, My Garage | Phones open the share sheet; computers open WhatsApp's "choose a chat" screen. The message has the car, its seats, bags, fuel and gearbox, and a link whose preview shows the car's photo. |
+| **Insights** (admin) | `/admin/insights` | Anonymous counts per car of WhatsApp taps, "send to family" shares and enquiry forms, for 7, 30 or 90 days, plus where chats start. `POST /api/events` stores only a day, the action, a public car slug and the place on the site, never an IP, device, cookie or message. Each car and action is counted once per visit. |
+| **Google reviews** | footer, review sections, admin enquiries | Set the Google review link in Site details. The site then shows "Review us on Google", and confirmed or closed enquiries get an "Ask for a Google review" button that opens WhatsApp to the customer with a thank-you and the link. |
 
 The Concierge trip answers are kept in `sessionStorage` for the visit, so car pages, Compare and WhatsApp messages can reuse them. Nothing from these features is sent to the server unless the visitor submits the enquiry form.
 
 ## SEO and speed
 
-- **Every page is served by Express** (`server/html.js`). It fills in the title, description, canonical URL, Open Graph/X tags and a 1200×630 preview image, so a car page shared on WhatsApp shows the car's photo and name. It also adds `AutoRental` structured data on every page and `BlogPosting` on articles. Unknown pages return a real 404 with `noindex`.
-- **`/sitemap.xml`** lists all public pages plus every published car and post. **`/robots.txt`** blocks `/admin` and `/api/`. Submit the sitemap in Google Search Console after launch (FR-14).
+- **Local search copy** (`src/seo.js`, shared by browser and server): every title, description and h1 is built from the **City** in Site details, e.g. "Car rental in Pune: self-drive & with driver", "Cars for rent in Pune", "Hyundai Creta on rent in Pune", "Airport transfers in Pune". The sample "Your city" is never used. Each page has exactly one h1 (a small keyword heading above the big slogan, which keeps its look).
+- **One page per service** (`/services/:slug`): its own title, h1, the admin's long description, cars picked by the Concierge rules, links to the other services, and a WhatsApp button. These target searches like "airport transfer in <city>".
+- **Areas we serve**: a list in Site details, shown on the home page and sent to Google as `areaServed`.
+- **Every page is served by Express** (`server/html.js`). It fills in the title, description, canonical URL, Open Graph/X tags (locale `en_IN`) and a 1200×630 preview image, so a car page shared on WhatsApp shows the car's photo and name. Structured data is one `@graph`: `AutoRental` (phone, email, address, areas served, map, social profiles) on every page, plus `FAQPage` (home), `ItemList` (fleet), `BreadcrumbList` + `Car` (car pages), `BreadcrumbList` + `Service` (service pages) and `BreadcrumbList` + `BlogPosting` (articles). Unknown pages return a real 404 with `noindex`.
+- **Search Console:** paste the HTML-tag code in Site details → Google; the server adds the `google-site-verification` meta tag.
+- **`/sitemap.xml`** lists all public pages, every service page, every published car (with its last-updated date) and post. **`/robots.txt`** blocks `/admin` and `/api/admin` only, so Google can fetch the public API while rendering; API responses carry `X-Robots-Tag: noindex` so they never appear in results. Submit the sitemap in Google Search Console after launch (FR-14).
 - **The first load needs no API round trip.** The server embeds that page's data in the HTML, so content paints immediately, then the browser quietly refreshes it.
 - **Caching:** on Vercel, page HTML is cached for 60 s and public API responses for 10 s, with stale-while-revalidate, so most visitors never wait on the database. Admin edits show up within about a minute. Built JS/CSS is cached for a year (file names change on every build).
 - **Bundle size:** the main bundle is about 170 KB gzipped. The Concierge (5 KB), Compare (3 KB), My Garage (2 KB), admin (11 KB) and Markdown renderer (14 KB) load only where they're needed.
@@ -69,6 +78,7 @@ src/seo.js           Page titles/descriptions shared by browser and server
 server/seed.js       `npm run seed`: sample content and the admin login
 server/seed-data.js  Sample content: replace it with client-approved content
 server/enquiry.js    Validates enquiries and staff updates; builds the dashboard's search filter
+server/events.js     Validates the anonymous WhatsApp-tap / share counter
 server/app.test.js   API tests against an in-memory MongoDB (auth, enquiries, dashboard)
 scripts/demo.js      `npm run demo`: local demo without Atlas
 src/admin/           Admin panel (separate bundle, loaded only on /admin)
@@ -78,17 +88,19 @@ src/features.jsx     Save/compare toggles, WhatsApp review sheet, compare tray, 
 src/concierge/       Concierge matching rules (pure functions, tested)
 src/whatsapp.js      WhatsApp message + link builder (tested)
 src/stores.js        My Garage, compare list and trip answers in browser storage (tested)
-src/fleet.js         Fleet helpers: daily-rate parsing, photo groups
+src/fleet.js         Fleet helpers: photo groups, known/unknown specs
+src/track.js         Sends the anonymous tap counter (sendBeacon)
 src/pages/*.jsx      One file per page
 src/styles.css       The whole design system (tokens at the top)
 ```
 
 ## Design direction
 
-The design borrows from the Indian highway **milestone**: a white stone with a yellow NH cap.
-- **Signature:** the hero's trip planner is a milestone ("0 km"). You pick a trip, a car and dates, and it writes the WhatsApp message as you go.
-- **Type:** Overpass for headings (it descends from highway-signage lettering). Atkinson Hyperlegible Next for body text, which is built to be read at a glance. Overpass Mono for specs and rates, read like dashboard figures.
-- **Colour:** asphalt `#1a1e21`, whitewash `#f3f4f1`, milestone yellow `#ffc414`, signboard green `#0a6b4e`.
+Light and warm, with dark photo bands. The client found the earlier all-dark look too dark.
+- **Colour:** warm off-white page `#f6f4ef`, white cards, ink `#161a20`, one headlight-amber accent `#ffb224` for buttons. Amber text uses a darker `#985700` (large headings `#d18400`) so it stays readable on light backgrounds. The photo hero, the footer and the full-screen photo viewer keep a dark palette. All colours are tokens at the top of `src/styles.css`.
+- **Type:** Archivo (expanded) for headings, Geist for body text, Geist Mono for specs and labels.
+- **Signature:** the hero's quick enquiry card and the Concierge, both of which write the WhatsApp message for the customer.
+- **No prices:** the client doesn't want rates on the website. Cars show specs and photos; pricing is discussed on WhatsApp.
 
 ## Phases
 
@@ -125,6 +137,6 @@ The project is linked to the Vercel project **drive-ease** (`.vercel/`). `vercel
 
 ## Before launch: content that is still sample
 
-Everything `npm run seed` loads (from `server/seed-data.js`) is placeholder content, editable in the admin: phone, WhatsApp number, address, services, rates, founder details, FAQ answers, the three blog posts and **all reviews**. The reviews are labelled as placeholders. The car photos are free Unsplash images, not the actual cars. Replace them with the client's own photos (exterior, interior & dashboard, boot) before launch, since the car pages and the Concierge present them as the car on offer.
+Everything `npm run seed` loads (from `server/seed-data.js`) is placeholder content apart from the client's phone and WhatsApp number (+91 88797 90490) and email (shreyans342@gmail.com). All of it is editable in the admin: address, services, founder details, FAQ answers, the three blog posts and **all reviews**. The reviews are labelled as placeholders. The car photos are free Unsplash images, not the actual cars. Replace them with the client's own photos (exterior, interior & dashboard, boot) before launch, since the car pages and the Concierge present them as the car on offer.
 
-Open client decisions that affect the build (PRD §16): D-01 fields and public rates · D-03 form fields and where enquiries go · D-05 whether Reviews and Contact are separate pages · D-06 which page text is editable · D-07 WhatsApp number, message and catalogue link · D-11 who gets admin access.
+Open client decisions that affect the build (PRD §16): D-01 car fields (decided: no public rates) · D-03 form fields and where enquiries go · D-05 whether Reviews and Contact are separate pages · D-06 which page text is editable · D-07 WhatsApp number, message and catalogue link · D-11 who gets admin access.

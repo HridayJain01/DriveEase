@@ -1,16 +1,17 @@
 import { Link } from 'react-router';
 import { ErrorState, PageHead, Photo, Seo } from '../components.jsx';
 import { formatDate, useApi } from '../lib.js';
-import { PAGES } from '../seo.js';
+import { pageMeta } from '../seo.js';
 
 export default function Blog() {
+  const { data: site } = useApi('/api/site');
   const { data: posts, error } = useApi('/api/posts');
   if (error) return <ErrorState error={error} what="blog" />;
   const [lead, ...rest] = posts || [];
 
   return (
     <>
-      <Seo {...PAGES['/blog']} />
+      <Seo {...pageMeta('/blog', site)} />
       <PageHead eyebrow="Blog" title="Notes from the road." />
       <section className="wrap">
         {!posts && <div className="post-lead skeleton" aria-busy="true" />}

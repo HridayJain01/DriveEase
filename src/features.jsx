@@ -7,6 +7,7 @@ import { img, srcSet, telLink } from './lib.js';
 import { photoGroups } from './fleet.js';
 import { compare, garage, MAX_COMPARE, trip as tripStore, useStore } from './stores.js';
 import { buildEnquiryMessage, enquiryFormPath, whatsappUrl } from './whatsapp.js';
+import { track } from './track.js';
 
 /* ---------- Status messages (visible + read by screen readers) ---------- */
 export const announce = (text, link) => dispatchEvent(new CustomEvent('de:announce', { detail: { text, link, id: Math.random() } }));
@@ -23,6 +24,66 @@ export function Announcer() {
     <div className="announcer" role="status" aria-live="polite">
       {msg && <p key={msg.id}>{msg.text}{msg.link && <Link to={msg.link.to}>{msg.link.label}</Link>}</p>}
     </div>
+  );
+}
+
+/* ---------- QR code for computer visitors ---------- */
+// Laptops rarely have WhatsApp set up, so on a large screen with a mouse we also show a QR code:
+// scanning it with a phone opens the same chat, message included.
+export function useDesktop() {
+  const query = '(min-width: 900px) and (hover: hover) and (pointer: fine)';
+  const [on, setOn] = useState(() => typeof matchMedia === 'function' && matchMedia(query).matches);
+  useEffect(() => {
+    const m = matchMedia(query);
+    const change = () => setOn(m.matches);
+    m.addEventListener('change', change);
+    return () => m.removeEventListener('change', change);
+  }, []);
+  return on;
+}
+
+export function QrCode({ text, label, size = 168 }) {
+  const [svg, setSvg] = useState('');
+  useEffect(() => {
+    let live = true;
+    // Loaded only when a QR is actually shown, so phones never download it.
+    import('uqr').then(({ renderSVG }) => live && setSvg(renderSVG(text, { ecc: 'L', border: 2 })));
+    return () => { live = false; };
+  }, [text]);
+  // The SVG is generated locally from our own link (shapes only, no text from the page), so it's safe to inline.
+  return <span className="qr" role="img" aria-label={label} style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
+export function WhatsAppQr({ site, text }) {
+  const desktop = useDesktop();
+  const url = whatsappUrl(site?.whatsappNumber, text ?? site?.whatsappMessage);
+  if (!desktop || !url) return null;
+  return (
+    <div className="qr-card">
+      <QrCode text={url} label="QR code that opens a WhatsApp chat with us" />
+      <p><strong>On a computer?</strong>Scan this with your phone’s camera to chat with us on WhatsApp.</p>
+    </div>
+  );
+}
+
+/* ---------- Send a car to family or friends ---------- */
+export function ShareCarButton({ v, source = 'car-page', full = false, className = '' }) {
+  async function share() {
+    const url = `${location.origin}/fleet/${v.slug}`;
+    const specs = [v.seats && `${v.seats} seats`, v.bags !== undefined && v.bags !== '' && `${v.bags} ${v.bags === 1 ? 'bag' : 'bags'}`, [v.fuel, v.transmission].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+    const text = `What do you think of this car for our trip? ${v.name}${specs ? ` (${specs})` : ''}.`;
+    track('share', v.slug, source);
+    // Phones: the share sheet (WhatsApp, Messages…). Computers: WhatsApp, which asks who to send it to.
+    if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+      try { await navigator.share({ title: v.name, text, url }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\nPhotos and details: ${url}`)}`, '_blank', 'noopener');
+  }
+  return (
+    <button type="button" className={full ? `btn btn-glass btn-sm ${className}` : `compare-btn ${className}`} onClick={share} aria-label={full ? undefined : `Send the ${v.name} to family or friends`} title="Send to family or friends">
+      <Icon name="share" size={16} />{full && 'Send to family'}
+    </button>
   );
 }
 
@@ -87,7 +148,13 @@ export function EnquiryDialog({ site }) {
   useEffect(() => { if (req && !ref.current.open) ref.current.showModal(); }, [req]);
 
   const close = () => ref.current?.close();
+  const desktop = useDesktop();
   const url = whatsappUrl(site?.whatsappNumber, text);
+  function openWhatsApp() { // counted per car for the admin's Insights page
+    if (req.cars?.length) req.cars.forEach((c) => track('whatsapp', c.slug || '', req.source));
+    else track('whatsapp', '', req.source);
+    setOpened(true);
+  }
   const hasTrip = trip && Object.values(trip).some(Boolean);
   const formPath = req ? enquiryFormPath({ cars: req.cars, trip: withTrip ? trip : null, source: req.source }) : '/contact#enquiry';
 
@@ -110,7 +177,7 @@ export function EnquiryDialog({ site }) {
               <div className="sheet-done" role="status">
                 <span className="done-icon"><Icon name="whatsapp" size={26} /></span>
                 <h3>WhatsApp is open</h3>
-                <p>Your message is ready in WhatsApp. Tap <strong>send</strong> there to reach us. Nothing has been sent yet, and nothing is booked until our team confirms availability and the rate with you.</p>
+                <p>Your message is ready in WhatsApp. Tap <strong>send</strong> there to reach us. Nothing has been sent yet, and nothing is booked until our team confirms availability with you.</p>
                 <button type="button" className="btn btn-glass" onClick={close}>Done</button>
               </div>
             ) : (
@@ -125,11 +192,17 @@ export function EnquiryDialog({ site }) {
                   <span>Message (you can edit it)</span>
                   <textarea rows={9} value={text} onChange={(e) => setText(e.target.value)} maxLength={1500} />
                 </label>
-                <p className="sheet-note"><Icon name="info" size={16} />This opens WhatsApp with the message typed in. It isn’t sent until you tap send, and it isn’t a booking: we’ll reply with availability and the rate.</p>
+                <p className="sheet-note"><Icon name="info" size={16} />This opens WhatsApp with the message typed in. It isn’t sent until you tap send, and it isn’t a booking: we’ll reply with availability.</p>
                 <div className="sheet-actions">
-                  <a className="btn btn-amber btn-block" href={url} target="_blank" rel="noopener noreferrer" onClick={() => setOpened(true)}><Icon name="whatsapp" />Open WhatsApp</a>
+                  <a className="btn btn-amber btn-block" href={url} target="_blank" rel="noopener noreferrer" onClick={openWhatsApp}><Icon name="whatsapp" />Open WhatsApp</a>
                   <button type="button" className="btn btn-glass" onClick={copy}><Icon name="copy" size={16} />{copied ? 'Copied' : 'Copy'}</button>
                 </div>
+                {desktop && (
+                  <div className="qr-card">
+                    <QrCode text={url} label="QR code that opens this message in WhatsApp on your phone" />
+                    <p><strong>No WhatsApp on this computer?</strong>Scan with your phone’s camera: the same message opens there.</p>
+                  </div>
+                )}
                 <Link className="composer-alt" to={formPath} onClick={close}>Prefer a call back? Send these details as an enquiry form</Link>
               </>
             )

@@ -67,7 +67,7 @@ export const garage = createListStore('de:garage', 50, () => safeStorage('localS
 export const compare = createListStore('de:compare', MAX_COMPARE, () => safeStorage('localStorage'));
 
 // The Concierge answers, kept for this browser session so car pages and WhatsApp messages can reuse them.
-const TRIP_KEYS = ['trip', 'from', 'to', 'start', 'end', 'passengers', 'bags', 'category', 'transmission', 'budget'];
+const TRIP_KEYS = ['trip', 'from', 'to', 'start', 'end', 'passengers', 'bags', 'category', 'transmission'];
 export const cleanTrip = (t) => (t && typeof t === 'object' ? Object.fromEntries(TRIP_KEYS.filter((k) => t[k] !== undefined).map((k) => [k, typeof t[k] === 'number' ? t[k] : String(t[k]).slice(0, 120)])) : null);
 export const trip = createStore('de:trip', { storage: () => safeStorage('sessionStorage'), parse: cleanTrip, initial: null });
 

@@ -6,6 +6,7 @@ import { Icon } from './icons.jsx';
 import { Announcer, CompareButton, CompareTray, EnquireButton, EnquiryDialog, SaveButton } from './features.jsx';
 import { garage, useStore } from './stores.js';
 import { whatsappUrl } from './whatsapp.js';
+import { track, trackClicks } from './track.js';
 
 export { Icon };
 
@@ -19,9 +20,11 @@ export function Logo() {
   );
 }
 
+// Keeps the tab title and description in step with the page while browsing. Crawlers get the same
+// values from the server (src/seo.js is shared), so this only matters for in-app navigation.
 export function Seo({ title, fullTitle, description }) {
   useEffect(() => {
-    document.title = fullTitle || (title ? `${title} — Drive Ease` : 'Drive Ease — Car rentals');
+    document.title = fullTitle || (title ? `${title} | Drive Ease` : 'Car rental | Drive Ease');
     if (description) document.querySelector('meta[name="description"]')?.setAttribute('content', description);
   }, [title, fullTitle, description]);
   return null;
@@ -44,6 +47,10 @@ export function Layout() {
   const { pathname, hash } = useLocation();
 
   useEffect(() => setOpen(false), [pathname, hash]);
+  useEffect(() => { // counts taps on WhatsApp links for the admin's Insights page (anonymous)
+    document.addEventListener('click', trackClicks);
+    return () => document.removeEventListener('click', trackClicks);
+  }, []);
   useEffect(() => {
     document.documentElement.classList.toggle('menu-open', open);
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
@@ -72,7 +79,7 @@ export function Layout() {
           </nav>
           <GarageLink />
           {site && (
-            <a className="pill-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp">
+            <a className="pill-wa" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp">
               <Icon name="whatsapp" size={18} /><span>Enquire</span>
             </a>
           )}
@@ -126,7 +133,8 @@ function Footer({ site }) {
             <h2 className="label">Talk to us</h2>
             <ul>
               <li><a href={telLink(site.phone)}>{site.phone}</a></li>
-              <li><a href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer">WhatsApp</a></li>
+              <li><a data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer">WhatsApp</a></li>
+              {site.googleReviewUrl && <li><a href={site.googleReviewUrl} target="_blank" rel="noreferrer">Review us on Google</a></li>}
               {site.whatsappCatalogueUrl && <li><a href={site.whatsappCatalogueUrl} target="_blank" rel="noreferrer">WhatsApp catalogue</a></li>}
               {site.email && <li><a href={`mailto:${site.email}`}>{site.email}</a></li>}
             </ul>
@@ -154,7 +162,7 @@ function Dock({ site }) {
   return (
     <aside className="dock" aria-label="Quick contact">
       <a className="dock-call" href={telLink(site.phone)} aria-label={`Call ${site.phone}`}><Icon name="phone" size={18} /><span>Call</span></a>
-      <a className="dock-wa" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={18} />WhatsApp us</a>
+      <a className="dock-wa" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={18} />WhatsApp us</a>
     </aside>
   );
 }
@@ -180,12 +188,6 @@ export function Specs({ v }) {
   );
 }
 
-export function Rate({ rate }) {
-  if (!rate) return <span className="rate rate-ask">Rate on request</span>;
-  const [amount, unit] = rate.split('/');
-  return <span className="rate"><strong>{amount.trim()}</strong>{unit && <small>/ {unit.trim()}</small>}</span>;
-}
-
 export function VehicleCard({ v, site, children }) {
   return (
     <article className="car-card">
@@ -201,7 +203,7 @@ export function VehicleCard({ v, site, children }) {
         {children}
         <Specs v={v} />
         <div className="car-foot">
-          <Rate rate={v.rate} />
+          <Link className="link-arrow car-more lift" to={`/fleet/${v.slug}`} tabIndex={-1} aria-hidden="true">View car<Icon name="arrow" size={16} /></Link>
           <span className="car-actions lift">
             <CompareButton v={v} />
             <EnquireButton cars={[v]} source="car-page" label={`Enquire about the ${v.name}`} />
@@ -231,6 +233,17 @@ function Review({ r }) {
 }
 
 // marquee: an endless, pausable strip (home page). Otherwise a plain grid.
+// "Review us on Google": shown only once the link is set in Site details.
+export function GoogleReviewLink({ className = 'btn btn-glass btn-sm' }) {
+  const { data: site } = useApi('/api/site');
+  if (!site?.googleReviewUrl) return null;
+  return (
+    <a className={className} href={site.googleReviewUrl} target="_blank" rel="noreferrer">
+      <Icon name="star" size={16} />Travelled with us? Review us on Google
+    </a>
+  );
+}
+
 export function ReviewList({ limit, marquee }) {
   const { data } = useApi('/api/reviews');
   if (!data) return <div className="reviews"><div className="review skeleton" /><div className="review skeleton" /></div>;
@@ -246,11 +259,13 @@ export function ReviewList({ limit, marquee }) {
   );
 }
 
-export function PageHead({ eyebrow, title, children }) {
+// h1: the page's search heading (e.g. "Cars for rent in Pune"), shown small above the big title,
+// which then becomes a styled paragraph. Without it, the big title is the h1.
+export function PageHead({ eyebrow, h1, title, children }) {
   return (
     <header className="page-head wrap">
-      {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-      <h1>{title}</h1>
+      {h1 ? <h1 className="eyebrow">{h1}</h1> : eyebrow && <p className="eyebrow">{eyebrow}</p>}
+      {h1 ? <p className="page-title">{title}</p> : <h1>{title}</h1>}
       {children && <div className="lede">{children}</div>}
     </header>
   );
@@ -288,7 +303,9 @@ export function TripComposer({ site, vehicles, fixedCar, title = 'Get a quote on
   function send(e) {
     e.preventDefault();
     const url = site && whatsappUrl(site.whatsappNumber, message);
-    url ? window.open(url, '_blank', 'noopener') : navigate(formLink); // no WhatsApp number configured: use the form
+    if (!url) return navigate(formLink); // no WhatsApp number configured: use the form
+    track('whatsapp', vehicles?.find((v) => v.name === t.car)?.slug || '', 'general');
+    window.open(url, '_blank', 'noopener');
   }
 
   return (
@@ -341,7 +358,7 @@ export function EnquiryForm({ site, initial = {} }) {
       <span className="done-icon"><Icon name="check" size={28} /></span>
       <h3>Enquiry sent</h3>
       <p>Thanks, {values.name.split(' ')[0]}. We’ll get back to you on {values.phone}.</p>
-      {site && <a className="btn btn-amber" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />Need it sooner? WhatsApp us</a>}
+      {site && <a className="btn btn-amber" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />Need it sooner? WhatsApp us</a>}
     </div>
   );
 

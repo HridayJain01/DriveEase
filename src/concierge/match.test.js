@@ -1,19 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assess, blankAnswers, recommend, validateAnswers } from './match.js';
-import { dailyRate } from '../fleet.js';
+import { answersUpTo, assess, blankAnswers, recommend, stepsDone, tripNoun, validateAnswers } from './match.js';
 import { vehicles } from '../../server/seed-data.js';
 
 const ask = (over) => ({ ...blankAnswers(), trip: 'family', from: 'Airport', ...over });
-
-test('daily rate is only parsed from a clear per-day price', () => {
-  assert.equal(dailyRate('₹2,400 / day'), 2400);
-  assert.equal(dailyRate('Rs 1800 per day'), 1800);
-  assert.equal(dailyRate(''), null);
-  assert.equal(dailyRate('from ₹2,000 / day'), null);
-  assert.equal(dailyRate('₹9,000 / weekend'), null);
-  assert.equal(dailyRate(undefined), null);
-});
 
 test('never recommends a car that lacks the seats or bag space', () => {
   const { top, more } = recommend(vehicles, ask({ passengers: 7, bags: 3 }));
@@ -27,27 +17,44 @@ test('never recommends a car that lacks the seats or bag space', () => {
 });
 
 test('a car missing a critical requirement is never a strong match', () => {
-  const r = assess({ name: 'Tiny', category: 'Hatchback', seats: 4, bags: 1, rate: '₹1,000 / day' }, ask({ passengers: 5, bags: 1 }));
+  const r = assess({ name: 'Tiny', category: 'Hatchback', seats: 4, bags: 1 }, ask({ passengers: 5, bags: 1 }));
   assert.equal(r.tier, 'unsuitable');
   assert.match(r.fails[0], /Seats 4; you need 5/);
 });
 
 test('preferences that are not met make a partial match, with the reason', () => {
-  const r = assess({ name: 'X', category: 'SUV', seats: 5, bags: 3, transmission: 'Manual', rate: '₹2,400 / day' }, ask({ passengers: 2, bags: 1, transmission: 'Automatic' }));
+  const r = assess({ name: 'X', category: 'SUV', seats: 5, bags: 3, transmission: 'Manual' }, ask({ passengers: 2, bags: 1, transmission: 'Automatic' }));
   assert.equal(r.tier, 'partial');
   assert.match(r.misses.join(' '), /manual, not automatic/);
 });
 
-test('budget is checked only against a verified daily rate', () => {
-  const answers = ask({ passengers: 2, bags: 1, budget: 3000 });
-  const fortuner = assess(vehicles.find((v) => v.slug === 'toyota-fortuner'), answers); // rate is blank
-  assert.equal(fortuner.tier, 'good');
-  assert.match(fortuner.unverified.join(' '), /No rate is listed/);
-  const verna = assess(vehicles.find((v) => v.slug === 'hyundai-verna'), answers);
-  assert.equal(verna.tier, 'great');
-  assert.match(verna.why, /within your ₹3,000 budget/);
-  const thar = assess(vehicles.find((v) => v.slug === 'mahindra-thar'), answers);
-  assert.match(thar.misses.join(' '), /above your ₹3,000 budget/);
+test('prices play no part in matching', () => {
+  const answers = ask({ passengers: 2, bags: 1 });
+  for (const v of vehicles) {
+    const r = assess({ ...v, rate: '₹9,99,999 / day' }, answers);
+    assert.doesNotMatch([r.why, ...r.misses, ...r.unverified].join(' '), /₹|rate|budget/i);
+  }
+});
+
+test('trip reasons come from the car\'s specs, not its type', () => {
+  const thar = assess(vehicles.find((v) => v.slug === 'mahindra-thar'), ask({ trip: 'airport', passengers: 2, bags: 1 }));
+  assert.doesNotMatch(thar.why, /boot space/); // an SUV with room for one bag
+  assert.match(thar.why, /takes 1 bag \(you have 1\)/);
+  const innova = assess(vehicles.find((v) => v.slug === 'toyota-innova-crysta'), ask({ trip: 'airport', passengers: 2, bags: 2 }));
+  assert.match(innova.why, /spare boot space for airport luggage/);
+  assert.equal(tripNoun('other'), 'trip');
+  assert.equal(tripNoun('family'), 'family holiday');
+});
+
+test('only answers from completed steps are remembered', () => {
+  const a = { ...blankAnswers(), trip: 'airport', from: 'T2' };
+  assert.deepEqual(answersUpTo(a, 0), {});
+  assert.deepEqual(answersUpTo(a, 1), { trip: 'airport' });
+  assert.deepEqual(Object.keys(answersUpTo(a, 2)).sort(), ['end', 'from', 'start', 'to', 'trip']);
+  assert.equal('passengers' in answersUpTo(a, 2), false); // the default "2 travellers" isn't kept
+  assert.equal(stepsDone(null), 0);
+  assert.equal(stepsDone(answersUpTo(a, 2)), 2);
+  assert.equal(stepsDone(answersUpTo(a, 4)), 4);
 });
 
 test('missing specs are reported as unverified, not guessed', () => {
@@ -71,6 +78,7 @@ test('explanations name the trip and the reasons', () => {
   const r = assess(vehicles.find((v) => v.slug === 'toyota-innova-crysta'), ask({ passengers: 6, bags: 4, category: 'MUV' }));
   assert.equal(r.tier, 'great');
   assert.match(r.why, /^This MUV may suit your family holiday because it seats 7 \(you need 6\)/);
+  assert.match(r.why, /has 7 seats, so a family can spread out/);
 });
 
 test('validates each step', () => {

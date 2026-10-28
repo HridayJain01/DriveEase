@@ -18,7 +18,7 @@ export default function Post() {
   const minutes = Math.max(1, Math.round(p.body.split(/\s+/).length / 200));
   return (
     <>
-      <Seo {...postMeta(p)} />
+      <Seo {...postMeta(p, site)} />
       <article className="article">
         <header className="wrap-narrow article-head">
           <nav className="crumbs" aria-label="Breadcrumb"><Link to="/blog">Blog</Link></nav>

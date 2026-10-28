@@ -5,10 +5,10 @@ export const collections = {
   vehicles: {
     label: 'Cars', singular: 'car', api: '/api/admin/vehicles',
     title: (d) => d.name || 'Untitled car',
-    sub: (d) => [d.category, d.rate || 'Rate on request'].filter(Boolean).join(' · '),
+    sub: (d) => [d.category, d.seats && `${d.seats} seats`, d.transmission].filter(Boolean).join(' · '),
     thumb: (d) => d.images?.[0],
     view: (d) => `/fleet/${d.slug}`,
-    blank: { name: '', category: '', seats: 5, bags: 2, fuel: 'Petrol', transmission: 'Manual', rate: '', summary: '', description: '', features: [], images: [], interiorImages: [], bootImages: [], featured: false, published: false, order: 0, slug: '' },
+    blank: { name: '', category: '', seats: 5, bags: 2, fuel: 'Petrol', transmission: 'Manual', summary: '', description: '', features: [], images: [], interiorImages: [], bootImages: [], featured: false, published: false, order: 0, slug: '' },
     main: [
       { name: 'name', label: 'Car name', required: true, max: 80, placeholder: 'e.g. Hyundai Creta' },
       { name: 'images', label: 'Exterior photos', type: 'images', hint: 'The first photo is the cover on the fleet page. Use real photos of this car.' },
@@ -22,7 +22,6 @@ export const collections = {
       { row: [
         { name: 'fuel', label: 'Fuel', type: 'select', options: ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'] },
         { name: 'transmission', label: 'Gearbox', type: 'select', options: ['Manual', 'Automatic'] },
-        { name: 'rate', label: 'Rate', max: 60, placeholder: '₹2,400 / day', hint: 'Leave empty to show “Rate on request”. Write it as “₹2,400 / day” so the Concierge can match budgets.' },
       ] },
       { name: 'summary', label: 'One-line summary', max: 160, hint: 'Shown on the car’s card.' },
       { name: 'description', label: 'Description', type: 'textarea', rows: 4, max: 2000 },
@@ -78,7 +77,8 @@ export const settingsFields = [
   { section: 'Business', fields: [
     { name: 'businessName', label: 'Business name', required: true, max: 80 },
     { name: 'tagline', label: 'Tagline', max: 200, hint: 'Shown under the home page headline and in the footer.' },
-    { name: 'city', label: 'City', max: 60, hint: 'Shown above the home page headline.' },
+    { name: 'city', label: 'City', max: 60, hint: 'Used in page titles and headings for Google, e.g. “Car rental in Pune”. Write just the city name.' },
+    { name: 'serviceAreas', label: 'Areas you serve', type: 'lines', hint: 'One per line, e.g. nearby areas, the airport and towns you often drive to. Shown on the home page and told to Google.' },
   ] },
   { section: 'Contact', fields: [
     { row: [
@@ -90,9 +90,13 @@ export const settingsFields = [
     { name: 'hours', label: 'Opening hours', max: 80, placeholder: 'Open daily, 7 am – 11 pm' },
   ] },
   { section: 'WhatsApp', fields: [
-    { name: 'whatsappNumber', label: 'WhatsApp number', required: true, max: 15, pattern: '\\d{8,15}', hint: 'Digits only, with country code — e.g. 919876543210.' },
+    { name: 'whatsappNumber', label: 'WhatsApp number', required: true, max: 15, pattern: '\\d{8,15}', hint: 'Digits only, with country code — e.g. 918879790490.' },
     { name: 'whatsappMessage', label: 'Pre-filled message', type: 'textarea', rows: 2, max: 300, hint: 'Typed for visitors when they tap a WhatsApp button.' },
     { name: 'whatsappCatalogueUrl', label: 'WhatsApp catalogue link', type: 'url', hint: 'Optional. Shown in the footer and on the contact page.' },
+  ] },
+  { section: 'Google', fields: [
+    { name: 'googleReviewUrl', label: 'Google review link', type: 'url', hint: 'From your Google Business Profile: “Ask for reviews” → copy the link (it looks like https://g.page/r/…). Adds “Review us on Google” buttons to the website and an “Ask for a Google review” button to confirmed and closed enquiries.' },
+    { name: 'googleSiteVerification', label: 'Google Search Console code', max: 100, hint: 'Search Console → Add property → HTML tag. Paste only the code inside content="…". Proves to Google that you own the site.' },
   ] },
   { section: 'Social links', fields: [
     { name: 'socials', type: 'group', fields: [
@@ -120,7 +124,7 @@ export const settingsFields = [
     { name: 'services', type: 'list', item: 'service', blank: { name: '', summary: '', details: '' }, fields: [
       { name: 'name', label: 'Service name', required: true, max: 60 },
       { name: 'summary', label: 'One-line summary', max: 160 },
-      { name: 'details', label: 'Details', type: 'textarea', rows: 3, max: 800 },
+      { name: 'details', label: 'Details', type: 'textarea', rows: 6, max: 3000, hint: 'Each service gets its own page on Google. Write 150–300 words: what’s included, typical trips, areas covered. Leave a blank line between paragraphs.' },
     ] },
   ] },
   { section: 'FAQs', hint: 'Only include answers the business has confirmed.', fields: [

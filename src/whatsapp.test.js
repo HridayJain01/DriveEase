@@ -22,7 +22,7 @@ test('includes the car and only the trip details the customer gave', () => {
   const msg = buildEnquiryMessage({
     greeting: 'Hi Drive Ease',
     cars: [{ name: 'Hyundai Creta', slug: 'hyundai-creta' }],
-    trip: { trip: 'family', from: 'Airport T2', to: 'Lonavala', start: '2026-11-02', end: '2026-11-04', passengers: 4, bags: 3, budget: 3500 },
+    trip: { trip: 'family', from: 'Airport T2', to: 'Lonavala', start: '2026-11-02', end: '2026-11-04', passengers: 4, bags: 3 },
     origin: 'https://driveease.in',
   });
   assert.match(msg, /^Hi Drive Ease/);
@@ -31,10 +31,10 @@ test('includes the car and only the trip details the customer gave', () => {
   assert.match(msg, /Pickup: Airport T2\nDestination: Lonavala/);
   assert.match(msg, /Dates: Mon, 2 Nov 2026 → Wed, 4 Nov 2026/);
   assert.match(msg, /Passengers: 4\nLuggage: 3 bags/);
-  assert.match(msg, /Budget: up to ₹3,500 \/ day/);
+  assert.doesNotMatch(msg, /₹|rate|budget/i);
 
   const bare = buildEnquiryMessage({ greeting: 'Hi', cars: [{ name: 'Swift' }] });
-  assert.equal(bare, 'Hi\n\nCar: Swift\n\nPlease share availability and the rate.');
+  assert.equal(bare, 'Hi\n\nCar: Swift\n\nPlease let me know if it’s available.');
   assert.doesNotMatch(bare, /Pickup|Dates|Passengers|undefined/);
 });
 
@@ -42,6 +42,12 @@ test('lists several cars for comparisons and shortlists', () => {
   const msg = buildEnquiryMessage({ greeting: 'Hi', cars: [{ name: 'A' }, { name: 'B' }], context: 'comparing' });
   assert.match(msg, /I’m comparing these cars:\n1\. A\n2\. B/);
   assert.match(msg, /which of these are available/);
+  assert.match(buildEnquiryMessage({ greeting: 'Hi', cars: [] }), /Could you suggest a car for this trip\?$/);
+});
+
+test('works for visitors who never used the Concierge (no trip saved)', () => {
+  // Used to throw, which crashed the page as soon as Enquire was tapped.
+  assert.equal(buildEnquiryMessage({ greeting: 'Hi', cars: [{ name: 'Swift' }], trip: null }), 'Hi\n\nCar: Swift\n\nPlease let me know if it’s available.');
 });
 
 test('falls back to a neutral greeting', () => {

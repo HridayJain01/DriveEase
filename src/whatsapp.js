@@ -25,7 +25,8 @@ const day = (iso) => {
 };
 
 // Trip lines appear only for details the customer actually gave.
-export function tripLines(t = {}) {
+export function tripLines(t) {
+  t ||= {}; // null when the visitor never used the Concierge
   const lines = [];
   if (t.trip) lines.push(`Trip: ${tripLabel(t.trip) || t.trip}`);
   if (t.from) lines.push(`Pickup: ${t.from}`);
@@ -35,7 +36,6 @@ export function tripLines(t = {}) {
   if (Number(t.passengers) > 0) lines.push(`Passengers: ${Number(t.passengers)}`);
   if (t.bags !== undefined && t.bags !== '' && Number(t.bags) >= 0 && t.passengers) lines.push(`Luggage: ${Number(t.bags)} ${Number(t.bags) === 1 ? 'bag' : 'bags'}`);
   if (t.transmission) lines.push(`Gearbox: ${t.transmission}`);
-  if (Number(t.budget) > 0) lines.push(`Budget: up to ₹${Number(t.budget).toLocaleString('en-IN')} / day`);
   return lines;
 }
 
@@ -56,7 +56,7 @@ export function buildEnquiryMessage({ greeting, cars = [], trip, origin, context
   }
   const lines = tripLines(trip);
   if (lines.length) parts.push(lines.join('\n'));
-  parts.push(cars.length > 1 ? 'Could you tell me which of these are available and the rates?' : 'Please share availability and the rate.');
+  parts.push(cars.length > 1 ? 'Could you tell me which of these are available?' : cars.length ? 'Please let me know if it’s available.' : 'Could you suggest a car for this trip?');
   return parts.join('\n\n');
 }
 

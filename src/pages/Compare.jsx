@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { ErrorState, Icon, PageHead, Photo, Rate, Seo, spec } from '../components.jsx';
+import { ErrorState, Icon, PageHead, Photo, Seo, spec } from '../components.jsx';
 import { announce, EnquireButton, SaveButton } from '../features.jsx';
-import { assess, TIERS, tripLabel } from '../concierge/match.js';
-import { bySlug, dailyRate, photoGroups } from '../fleet.js';
+import { assess, TIERS, tripNoun } from '../concierge/match.js';
+import { bySlug, photoGroups } from '../fleet.js';
 import { useApi } from '../lib.js';
-import { PAGES } from '../seo.js';
+import { pageMeta } from '../seo.js';
 import { compare, MAX_COMPARE, trip as tripStore, useStore } from '../stores.js';
 
 // Each row: label, value for a car, and (for numbers) which way is better.
 const ROWS = [
   { key: 'category', label: 'Type', value: (v) => v.category },
-  { key: 'rate', label: 'Rate', value: (v) => v.rate, render: (v) => <Rate rate={v.rate} />, num: (v) => dailyRate(v.rate), best: 'min' },
   { key: 'seats', label: 'Seats', value: (v) => v.seats, num: (v) => v.seats, best: 'max' },
   { key: 'bags', label: 'Bags', value: (v) => v.bags, num: (v) => v.bags, best: 'max' },
   { key: 'transmission', label: 'Gearbox', value: (v) => v.transmission },
@@ -57,9 +56,9 @@ export default function Compare() {
 
   return (
     <>
-      <Seo {...PAGES['/compare']} />
+      <Seo {...pageMeta('/compare', site)} />
       <PageHead eyebrow="Compare cars" title="Side by side.">
-        <p>Compare up to {MAX_COMPARE} cars. Rates and specs are as listed by our team; availability and the final rate are confirmed when you enquire.</p>
+        <p>Compare up to {MAX_COMPARE} cars. Specs are as listed by our team; availability is confirmed when you enquire on WhatsApp.</p>
       </PageHead>
       <section className="wrap compare">
         {!vehicles && <div className="compare-skel skeleton" aria-busy="true" aria-label="Loading cars" />}
@@ -112,7 +111,7 @@ export default function Compare() {
 
               {hasTrip && (
                 <div className="crow" role="row">
-                  <span className="clabel" role="rowheader">For your {tripLabel(trip.trip).toLowerCase()}</span>
+                  <span className="clabel" role="rowheader">For your {tripNoun(trip.trip)}</span>
                   {cars.map((v) => {
                     const r = assess(v, trip);
                     return (
@@ -137,7 +136,7 @@ export default function Compare() {
                       return (
                         <div key={v.slug} className={`ccell${isBest ? ' is-best' : ''}`} role="cell">
                           {row.render ? (row.render(v) ?? spec('')) : spec(row.value(v))}
-                          {isBest && <span className="best-tag">{row.best === 'max' ? 'Most' : 'Lowest'}</span>}
+                          {isBest && <span className="best-tag">Most</span>}
                         </div>
                       );
                     })}

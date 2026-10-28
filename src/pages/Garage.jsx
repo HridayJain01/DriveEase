@@ -4,8 +4,9 @@ import { CardSkeletons, ErrorState, Icon, PageHead, Seo, VehicleCard } from '../
 import { announce, EnquireButton } from '../features.jsx';
 import { bySlug } from '../fleet.js';
 import { useApi } from '../lib.js';
-import { PAGES } from '../seo.js';
+import { pageMeta } from '../seo.js';
 import { cleanSlugs, compare, garage, MAX_COMPARE, useStore } from '../stores.js';
+import { track } from '../track.js';
 
 // My Garage: cars this visitor saved on this device. A shared link (/garage?cars=a,b) shows
 // someone else's shortlist. It holds public car slugs only, never anything about the visitor.
@@ -34,7 +35,7 @@ export default function Garage() {
 
   return (
     <>
-      <Seo {...PAGES['/garage']} />
+      <Seo {...pageMeta('/garage', site)} />
       <PageHead eyebrow={shared ? 'Shared shortlist' : 'My Garage'} title={shared ? 'A shortlist, shared with you.' : 'Cars you’ve saved.'}>
         <p>{shared
           ? 'Someone picked these cars from the Drive Ease fleet. Save them to your own garage, compare them or ask us about them.'
@@ -88,9 +89,10 @@ export default function Garage() {
 function Share({ cars }) {
   const [copied, setCopied] = useState(false);
   const url = `${location.origin}/garage?cars=${cars.map((v) => v.slug).join(',')}`;
-  const text = `My Drive Ease shortlist:\n${cars.map((v, i) => `${i + 1}. ${v.name}${v.rate ? ` (${v.rate})` : ''}`).join('\n')}\n\n${url}`;
+  const text = `My Drive Ease shortlist:\n${cars.map((v, i) => `${i + 1}. ${v.name}`).join('\n')}\n\n${url}`;
 
   async function share() {
+    cars.forEach((v) => track('share', v.slug, 'garage'));
     if (navigator.share) {
       try { await navigator.share({ title: 'My Drive Ease shortlist', text, url }); return; }
       catch (e) { if (e.name === 'AbortError') return; }
@@ -103,7 +105,7 @@ function Share({ cars }) {
     <>
       <button type="button" className="btn btn-glass btn-sm" onClick={share}><Icon name={copied ? 'check' : 'share'} size={16} />{copied ? 'Copied' : 'Share'}</button>
       {/* No number: WhatsApp asks who to send it to (a friend or family member, not the business). */}
-      <a className="btn btn-glass btn-sm" href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={16} />Send to a friend</a>
+      <a className="btn btn-glass btn-sm" href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" onClick={() => cars.forEach((v) => track('share', v.slug, 'garage'))}><Icon name="whatsapp" size={16} />Send to a friend</a>
     </>
   );
 }

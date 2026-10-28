@@ -158,7 +158,7 @@ function EnquiryCard({ e, site, onUpdate, onRemove, onNote }) {
           )}
           <form onSubmit={addNote} className="a-note-form">
             <label className="a-field"><span className="sr-only">New note for {e.name}</span>
-              <textarea rows={2} value={note} onChange={(ev) => setNote(ev.target.value)} maxLength={1000} placeholder="e.g. Sent Creta rate, customer will confirm by Friday" required />
+              <textarea rows={2} value={note} onChange={(ev) => setNote(ev.target.value)} maxLength={1000} placeholder="e.g. Sent Creta photos, customer will confirm by Friday" required />
             </label>
             <button className="btn btn-dark btn-sm" disabled={saving || !note.trim()}>{saving ? 'Saving…' : 'Add note'}</button>
           </form>
@@ -170,6 +170,12 @@ function EnquiryCard({ e, site, onUpdate, onRemove, onNote }) {
           <Icon name="whatsapp" size={16} />Reply on WhatsApp
         </a>
         <a className="btn btn-ghost btn-sm" href={telLink(e.phone)}><Icon name="phone" size={16} />Call</a>
+        {site?.googleReviewUrl && ['confirmed', 'closed'].includes(e.status) && (
+          <a className="btn btn-ghost btn-sm" target="_blank" rel="noreferrer" title="Opens WhatsApp with a thank-you message and your review link"
+            href={waLink(waNumber(e.phone), `Hi ${e.name.split(' ')[0]}, thank you for travelling with ${site.businessName || 'Drive Ease'}! If you have a minute, a quick Google review would really help us: ${site.googleReviewUrl}`)}>
+            <Icon name="star" size={16} />Ask for a Google review
+          </a>
+        )}
         <button type="button" className="a-link danger" onClick={() => onRemove(e)}>Delete</button>
       </footer>
     </article>

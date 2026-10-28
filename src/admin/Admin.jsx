@@ -6,6 +6,7 @@ import { collections, settingsFields } from './config.js';
 import { Fields } from './Fields.jsx';
 import { api, toast } from './api.js';
 import Enquiries from './Enquiries.jsx';
+import Insights from './Insights.jsx';
 import './admin.css';
 
 /* ---------- Helpers ---------- */
@@ -73,6 +74,7 @@ export default function AdminApp() {
           <NavLink to="/admin/vehicles">Cars</NavLink>
           <NavLink to="/admin/posts">Blog</NavLink>
           <NavLink to="/admin/reviews">Reviews</NavLink>
+          <NavLink to="/admin/insights">Insights</NavLink>
           <NavLink to="/admin/settings">Site details</NavLink>
         </nav>
         <div className="a-side-foot">
@@ -89,6 +91,7 @@ export default function AdminApp() {
             <Route key={type} path={type} element={<CollectionList type={type} />} />,
             <Route key={`${type}-edit`} path={`${type}/:id`} element={<CollectionEdit type={type} />} />,
           ])}
+          <Route path="insights" element={<Insights />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="account" element={<Account />} />
           <Route path="*" element={<p className="a-empty">This admin page doesn’t exist. <Link to="/admin">Go to enquiries</Link></p>} />

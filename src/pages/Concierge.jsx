@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { ErrorState, Icon, Photo, Rate, Seo, Specs } from '../components.jsx';
-import { CompareButton, EnquireButton, SaveButton } from '../features.jsx';
-import { blankAnswers, BUDGETS, recommend, TIERS, TRIPS, tripLabel, validateAnswers } from '../concierge/match.js';
-import { inr } from '../fleet.js';
+import { ErrorState, Icon, Photo, Seo, Specs } from '../components.jsx';
+import { CompareButton, EnquireButton, SaveButton, ShareCarButton } from '../features.jsx';
+import { answersUpTo, blankAnswers, recommend, stepsDone, TIERS, TRIPS, tripLabel, validateAnswers } from '../concierge/match.js';
 import { formatDate, today, useApi } from '../lib.js';
 import { calm } from '../motion.jsx';
-import { PAGES } from '../seo.js';
+import { pageMeta } from '../seo.js';
 import { compare, trip as tripStore, useStore } from '../stores.js';
 import { enquiryFormPath } from '../whatsapp.js';
 
@@ -19,9 +18,11 @@ const STEPS = [
 const RESULTS = STEPS.length;
 
 export default function Concierge() {
+  const { data: site } = useApi('/api/site');
   const { data: vehicles, error } = useApi('/api/vehicles');
   const stored = useStore(tripStore);
   const [a, setA] = useState(() => ({ ...blankAnswers(), ...stored }));
+  const [done, setDone] = useState(() => stepsDone(stored)); // steps completed so far
   const [errors, setErrors] = useState({});
   const [params, setParams] = useSearchParams();
   const heading = useRef();
@@ -29,18 +30,19 @@ export default function Concierge() {
   // The step lives in the URL, so the browser's back button steps back through the questions.
   const firstInvalid = STEPS.findIndex((s) => Object.keys(validateAnswers(a, s.id, today())).length);
   const wanted = Math.max(0, Math.min(RESULTS, Number(params.get('step')) || 0));
-  const step = firstInvalid === -1 ? wanted : Math.min(wanted, firstInvalid);
+  const step = Math.min(wanted, done, firstInvalid === -1 ? RESULTS : firstInvalid); // no skipping ahead via the URL
 
   // ?trip=family (from the home page) preselects the trip and moves on.
   useEffect(() => {
     const t = params.get('trip');
     if (t && TRIPS.some((x) => x.id === t)) {
-      setA((x) => ({ ...x, trip: t }));
+      const nextA = { ...a, trip: t };
+      setA(nextA);
+      remember(nextA, Math.max(done, 1));
       setParams({ step: '1' }, { replace: true });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { tripStore.set(a); }, [a]); // remembered for this visit: car pages and WhatsApp reuse it
   const mounted = useRef(false);
   useEffect(() => {
     if (mounted.current) { // new question: bring the card to the top and move focus to its heading
@@ -52,6 +54,8 @@ export default function Concierge() {
 
   const set = (patch) => { setA((x) => ({ ...x, ...patch })); setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !(k in patch)))); };
   const go = (n) => setParams(n ? { step: String(n) } : {}, { preventScrollReset: false });
+  // Remembered for this visit so car pages, Compare and WhatsApp messages can reuse the answers.
+  function remember(answers, n) { setDone(n); tripStore.set(n ? answersUpTo(answers, n) : null); }
 
   function next(e) {
     e?.preventDefault();
@@ -61,6 +65,7 @@ export default function Concierge() {
       requestAnimationFrame(() => document.querySelector('.cq [aria-invalid="true"], .cq .field-error')?.closest('label, fieldset')?.querySelector('input, select, button')?.focus());
       return;
     }
+    remember(a, Math.max(done, step + 1));
     go(step + 1);
   }
 
@@ -69,7 +74,7 @@ export default function Concierge() {
 
   return (
     <>
-      <Seo {...PAGES['/concierge']} />
+      <Seo {...pageMeta('/concierge', site)} />
       <section className="wrap concierge">
         <aside className="cq-intro">
           <p className="eyebrow">Drive Ease Concierge</p>
@@ -96,7 +101,7 @@ export default function Concierge() {
               </div>
             </form>
           ) : (
-            <Results a={a} vehicles={vehicles} headingRef={heading} onEdit={go} onReset={() => { setA(blankAnswers()); setErrors({}); go(0); }} />
+            <Results a={a} vehicles={vehicles} headingRef={heading} onEdit={go} onReset={() => { setA(blankAnswers()); setErrors({}); remember(null, 0); go(0); }} />
           )}
         </div>
       </section>
@@ -200,9 +205,6 @@ function PrefsStep({ a, set, categories }) {
     <div className="cq-prefs">
       <Chips name="category" legend="Type of car" value={a.category} onChange={(category) => set({ category })} options={[['', 'No preference'], ...categories.map((c) => [c, c])]} />
       <Chips name="transmission" legend="Gearbox" value={a.transmission} onChange={(transmission) => set({ transmission })} options={[['', 'Either'], ['Manual', 'Manual'], ['Automatic', 'Automatic']]} />
-      <Chips name="budget" legend="Budget per day" value={a.budget} onChange={(budget) => set({ budget })}
-        options={[[0, 'No fixed budget'], ...BUDGETS.map((b) => [b, `Up to ${inr(b)}`])]}
-        note="Budgets are checked only against rates we list as a simple daily price. Final rates are confirmed with you." />
     </div>
   );
 }
@@ -215,7 +217,7 @@ function Summary({ a, upTo, onEdit }) {
     [1, 'Route', [a.from, a.to].filter(Boolean).join(' → ')],
     [1, 'Dates', dates],
     [2, 'Travellers', a.passengers && `${a.passengers} ${a.passengers === 1 ? 'person' : 'people'} · ${a.bags} ${a.bags === 1 ? 'bag' : 'bags'}`],
-    [3, 'Preferences', [a.category, a.transmission, a.budget ? `≤ ${inr(a.budget)}/day` : ''].filter(Boolean).join(' · ')],
+    [3, 'Preferences', [a.category, a.transmission].filter(Boolean).join(' · ')],
   ].filter(([s, , v]) => v && s < upTo); // only answers already given
   return (
     <dl className="cq-summary">
@@ -251,7 +253,7 @@ function Results({ a, vehicles, headingRef, onEdit, onReset }) {
           : n === 0 ? 'No car in our fleet fits all of that'
             : `${n} ${n === 1 ? 'car fits' : 'cars fit'} your ${a.trip === 'other' ? 'trip' : trip}`}
       </h2>
-      <p className="cq-disclaimer"><Icon name="info" size={16} />These are suggestions based on the specs listed on our website. They aren’t a booking or a promise of availability: our team confirms the car, dates and rate with you.</p>
+      <p className="cq-disclaimer"><Icon name="info" size={16} />These are suggestions based on the specs listed on our website. They aren’t a booking or a promise of availability: our team confirms the car and dates with you on WhatsApp.</p>
 
       {res.top.length > 0 && (
         <ol className="results">
@@ -327,10 +329,10 @@ function Result({ r, best }) {
             {r.unverified.map((t) => <li key={t} className="is-unknown"><Icon name="info" size={14} /><span><span className="sr-only">Not verified: </span>{t}</span></li>)}
           </ul>
         )}
-        {r.ok.length > 0 && r.tier === 'unsuitable' && <p className="result-why muted">It does {r.ok.slice(0, 2).join(' and ')}.</p>}
+        {r.ok.length > 0 && r.tier === 'unsuitable' && <p className="result-why muted">It {r.ok.slice(0, 2).join(' and ')}.</p>}
         <div className="result-foot">
-          <Rate rate={v.rate} />
           <span className="car-actions">
+            <ShareCarButton v={v} source="concierge" />
             <CompareButton v={v} />
             <Link className="btn btn-glass btn-sm" to={`/fleet/${v.slug}`}>Details</Link>
             <EnquireButton cars={[v]} source="concierge" label={`Enquire about the ${v.name} on WhatsApp`} />
