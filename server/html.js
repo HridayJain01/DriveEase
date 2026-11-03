@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { publicData as read, Vehicle } from './db.js';
+import { publicData as read } from './db.js';
 import { cityOf, pageMeta, postMeta, serviceMeta, vehicleMeta } from '../src/seo.js';
 
 // Serves the React app's HTML with each page's title, description, canonical URL, link-preview
@@ -12,7 +12,7 @@ const json = (data) => JSON.stringify(data).replace(/</g, '\\u003c');
 // The public address comes only from configuration, never from request headers: a forged Host header
 // must not end up in cached canonical links, the sitemap, or where the page shell is loaded from.
 const configuredOrigin = () => {
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL; // set by Vercel itself
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL; // set by Vercel itself
   return (process.env.SITE_URL || (vercel ? `https://${vercel}` : '')).replace(/\/+$/, '');
 };
 
@@ -172,7 +172,7 @@ export function robots(req, res) {
 
 export async function sitemap(req, res) {
   const origin = siteOrigin(req);
-  const [site, cars, posts] = await Promise.all([read.site(), Vehicle.find({ published: true }).select('slug updatedAt').lean(), read.posts()]);
+  const [site, cars, posts] = await Promise.all([read.site(), read.carDates(), read.posts()]);
   const day = (d) => d && new Date(d).toISOString().slice(0, 10);
   const urls = [
     ['/'], ['/fleet'], ['/services'], ['/concierge'], ['/about'], ['/blog'], ['/contact'],

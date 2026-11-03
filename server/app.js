@@ -1,5 +1,5 @@
 import express from 'express';
-import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, Settings, Stat, Vehicle } from './db.js';
+import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, sampleMode, Settings, Stat, Vehicle } from './db.js';
 import { businessDay, sinceDay, validateEvent } from './events.js';
 import { renderPage, robots, sitemap } from './html.js';
 import { clearSession, hashPassword, readSession, setSession, verifyPassword } from './auth.js';
@@ -10,7 +10,10 @@ const app = express();
 app.use(express.json({ limit: '200kb' }));
 // JSON isn't a page: keep API responses out of search results (Google may still fetch them to render pages).
 app.use('/api', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); });
-app.use(async (req, res, next) => { await connectDb(); next(); });
+app.use(async (req, res, next) => { if (!sampleMode()) await connectDb(); next(); });
+// Without a database nothing can be saved: say so plainly, and let WhatsApp carry the enquiry.
+app.use(['/api/auth', '/api/admin', '/api/enquiries'], (req, res, next) => (sampleMode() ? res.status(503).json({ error: 'This isn’t connected to a database yet. Please message us on WhatsApp.' }) : next()));
+app.use('/api/events', (req, res, next) => (sampleMode() ? res.sendStatus(204) : next()));
 
 /* ---------- Public ---------- */
 // Visitors' browsers revalidate every time; Vercel's CDN may serve a copy up to 10 s old while it refreshes.

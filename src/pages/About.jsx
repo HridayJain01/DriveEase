@@ -16,13 +16,13 @@ export default function About() {
         <>
           <section className="wrap about-grid">
             <div className="prose">{a.story.split('\n\n').map((p, i) => <p key={i}>{p}</p>)}</div>
-            <figure className="founder">
+            {a.founderName && <figure className="founder">
               {a.founderPhoto
                 ? <Photo src={a.founderPhoto} alt={a.founderName} className="founder-photo" sizes="320px" />
                 : <div className="founder-initials" aria-hidden="true">{a.founderName.split(' ').map((w) => w[0]).join('').slice(0, 2)}</div>}
               <blockquote>“{a.founderQuote}”</blockquote>
               <figcaption><strong>{a.founderName}</strong><span>{a.founderRole}</span></figcaption>
-            </figure>
+            </figure>}
           </section>
           {a.promises?.length > 0 && (
             <section className="section wrap" aria-labelledby="promise-h">

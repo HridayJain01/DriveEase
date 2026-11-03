@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { STATUSES } from './enquiry.js';
+import { posts as samplePosts, site as sampleSite, vehicles as sampleVehicles } from './seed-data.js';
 
 const { Schema, model, models } = mongoose;
 mongoose.Error.messages.general.required = 'Fill in this field.';
@@ -135,16 +136,34 @@ export const Admin = models.Admin || model('Admin', adminSchema);
 export const LoginAttempt = models.LoginAttempt || model('LoginAttempt', loginAttemptSchema);
 export const Stat = models.Stat || model('Stat', statSchema);
 
+// Sample-content mode: lets the site go live for viewing and WhatsApp enquiries before a database
+// exists. It must be switched on explicitly (SAMPLE_CONTENT=1), so a production site that has merely
+// lost its MONGODB_URI shows an error rather than silently serving samples. Anything that would look
+// like real business facts but isn't (reviews, address, founder, socials) is left out.
+export const sampleMode = () => !process.env.MONGODB_URI && process.env.SAMPLE_CONTENT === '1';
+const byOrder = (a, b) => a.order - b.order;
+const sample = {
+  site: () => ({ ...sampleSite, city: '', address: '', mapUrl: '', socials: {}, about: { ...sampleSite.about, founderName: '', founderRole: '', founderQuote: '' } }),
+  vehicles: () => [...sampleVehicles].sort(byOrder),
+  vehicle: (slug) => sampleVehicles.find((v) => v.slug === slug) || null,
+  carDates: () => sampleVehicles.map(({ slug }) => ({ slug })),
+  posts: () => samplePosts.map(({ body, ...p }) => p),
+  post: (slug) => samplePosts.find((p) => p.slug === slug) || null,
+  reviews: () => [], // the samples are placeholders, never shown publicly
+};
+
 // Published content as visitors see it. Used by the JSON API and by the server-rendered page shell,
 // so both always return exactly the same data.
 const hidden = '-_id -__v -key -createdAt -updatedAt';
 // Prices aren't shown on the site any more; cars saved before that may still have a stored rate.
 const carHidden = `${hidden} -rate`;
-export const publicData = {
+const live = {
   site: () => Settings.findOne({ key: 'site' }).select(hidden).lean(),
   vehicles: () => Vehicle.find({ published: true }).sort({ order: 1, createdAt: 1 }).select(carHidden).lean(),
   vehicle: (slug) => Vehicle.findOne({ slug, published: true }).select(carHidden).lean(),
+  carDates: () => Vehicle.find({ published: true }).select('slug updatedAt').lean(),
   posts: () => Post.find({ published: true }).sort({ publishedAt: -1 }).select(`${hidden} -body`).lean(),
   post: (slug) => Post.findOne({ slug, published: true }).select(hidden).lean(),
   reviews: () => Review.find({ published: true }).sort({ order: 1, createdAt: -1 }).select(hidden).lean(),
 };
+export const publicData = Object.fromEntries(Object.entries(live).map(([k, read]) => [k, async (...args) => (sampleMode() ? sample[k](...args) : read(...args))]));

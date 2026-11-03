@@ -36,7 +36,7 @@
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
-  --gutter: clamp(16px, 5vw, 48px);
+  --gutter: max(clamp(16px, 5vw, 48px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   --ease: cubic-bezier(.16, 1, .3, 1);
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
@@ -70,7 +70,7 @@
 html { color-scheme: light; background: var(--bg); -webkit-text-size-adjust: 100%; scroll-padding-top: 96px; }
 html.menu-open { overflow: hidden; }
 body {
-  margin: 0; min-height: 100dvh; background: var(--bg); color: var(--text);
+  margin: 0; min-height: 100vh; min-height: 100dvh; background: var(--bg); color: var(--text);
   font: 400 1rem/1.6 var(--font-body); -webkit-font-smoothing: antialiased; overflow-x: clip;
 }
 body::before { /* night-sky ambience: a faint amber glow up top, cool haze below */
@@ -159,7 +159,7 @@ h2 { font-size: clamp(2rem, 7.4vw, 3.6rem); }
 @keyframes menuIn { from { opacity: 0; transform: translateY(18px); } }
 
 /* ---------- Hero ---------- */
-.hero { position: relative; border-radius: 0 0 clamp(24px, 4vw, 44px) clamp(24px, 4vw, 44px); min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; padding: 96px 0 104px; isolation: isolate; }
+.hero { position: relative; border-radius: 0 0 clamp(24px, 4vw, 44px) clamp(24px, 4vw, 44px); min-height: 100vh; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; padding: 96px 0 104px; isolation: isolate; }
 .hero-visual { position: absolute; inset: 0; z-index: -1; }
 .hero-car { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%; filter: saturate(.95) contrast(1.02) brightness(.94); }
 .hero-visual::after {
@@ -176,7 +176,7 @@ h2 { font-size: clamp(2rem, 7.4vw, 3.6rem); }
 .status { display: inline-flex; align-items: center; gap: 9px; margin: 0; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font: 500 .72rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
 .status i { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px var(--amber); animation: blink 2.4s ease-in-out infinite; }
 @keyframes blink { 50% { opacity: .35; } }
-.hero-title { font-size: clamp(2.3rem, 9.5vw, 6rem); line-height: .98; color: var(--text); letter-spacing: -.035em; margin: 16px 0 20px; max-width: 13ch; }
+.hero-title { font-size: clamp(1.85rem, 9.5vw, 6rem); line-height: .98; color: var(--text); letter-spacing: -.035em; margin: 16px 0 20px; max-width: 13ch; }
 .hero-title em { display: block; color: var(--accent-display); }
 .hero .lede { margin: 0 0 24px; color: #b4bcc6; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -201,7 +201,7 @@ h1.eyebrow { margin: 0 0 16px; }
 /* ---------- Story: pinned, scroll-driven ---------- */
 .story { position: relative; }
 .story + .section { padding-top: 8px; }
-.story-stage { position: relative; height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 84px 0 calc(150px + var(--safe-b)); overflow: hidden; }
+.story-stage { position: relative; height: 100vh; height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 84px 0 calc(150px + var(--safe-b)); overflow: hidden; }
 .story-grid { display: grid; gap: 22px; align-items: center; }
 .story-copy .eyebrow .mono { color: var(--accent-text); letter-spacing: .06em; }
 .story-text { min-height: 7.5em; animation: fadeUp .6s var(--ease) both; }
@@ -615,7 +615,7 @@ html.has-tray .footer { padding-bottom: calc(176px + var(--safe-b)); }
 html.menu-open .tray { opacity: 0; pointer-events: none; }
 
 /* WhatsApp review sheet */
-.sheet { width: min(100% - 24px, 520px); max-height: min(92dvh, 760px); margin: auto; padding: 0; border: 1px solid var(--line-2); border-radius: 28px; background: var(--panel); color: var(--text); box-shadow: 0 40px 100px -30px var(--shadow); overflow: auto; }
+.sheet { width: min(100% - 24px, 520px); max-height: 88vh; max-height: min(92dvh, 760px); overscroll-behavior: contain; margin: auto; padding: 0; border: 1px solid var(--line-2); border-radius: 28px; background: var(--panel); color: var(--text); box-shadow: 0 40px 100px -30px var(--shadow); overflow: auto; }
 .sheet::backdrop { background: var(--scrim); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .sheet[open] { animation: rise .35s var(--ease) both; }
 .sheet-inner { display: grid; gap: 16px; padding: 20px; }
@@ -623,7 +623,7 @@ html.menu-open .tray { opacity: 0; pointer-events: none; }
 .sheet-head h2 { font-size: 1.25rem; font-stretch: 112%; letter-spacing: -.01em; }
 .sheet-cars { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .sheet-cars span { padding: 5px 11px; border-radius: 999px; background: var(--amber-soft); border: 1px solid rgba(255, 178, 36, .3); color: var(--accent-text); font-size: .82rem; font-weight: 600; }
-.sheet .field textarea { font-size: .92rem; line-height: 1.5; min-height: 180px; }
+.sheet .field textarea { font-size: 16px; line-height: 1.5; min-height: 180px; }
 .sheet-note { display: flex; gap: 8px; margin: 0; font-size: .82rem; color: var(--muted); }
 .sheet-note svg, .cq-disclaimer svg, .gallery-missing svg { flex: none; margin-top: 2px; color: var(--accent-text); }
 .sheet-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
@@ -648,13 +648,13 @@ html.menu-open .tray { opacity: 0; pointer-events: none; }
 .gallery-missing { display: flex; gap: 8px; margin: 12px 0 0; font-size: .84rem; color: var(--muted); }
 .thumbs { scrollbar-width: none; padding: 2px; }
 .thumbs::-webkit-scrollbar { display: none; }
-.lightbox { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(3, 5, 8, .96); color: var(--text); }
+.lightbox { width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(3, 5, 8, .96); color: var(--text); }
 .lightbox[open] { display: grid; place-items: center; }
 .lightbox::backdrop { background: #000; }
 .lightbox figure { margin: 0; padding: 64px 12px 24px; display: grid; gap: 12px; justify-items: center; max-width: 100%; max-height: 100%; }
 .lightbox img { max-width: min(100%, 1600px); max-height: calc(100dvh - 140px); object-fit: contain; border-radius: 14px; }
 .lightbox figcaption { font: 400 .78rem var(--font-mono); color: var(--muted); text-align: center; }
-.lightbox-close { position: absolute; top: 14px; right: 14px; }
+.lightbox-close { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px)); }
 
 /* Car page: specs + side card */
 .spec-list { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
@@ -780,6 +780,77 @@ html.menu-open .tray { opacity: 0; pointer-events: none; }
 .hero-links .hero-fleet { margin-top: 0; }
 .hero-concierge { color: var(--accent-text); font-size: .9rem; white-space: normal; }
 
+/* iOS and Android */
+html { -webkit-tap-highlight-color: transparent; text-size-adjust: 100%; }
+html:has(dialog[open]) { overflow: hidden; } /* the page behind a sheet stays still */
+@supports not (overflow: clip) { body, .footer { overflow-x: hidden; } } /* iOS before 16 */
+/* Same dropdown arrow on every phone, and date fields that line up on iOS. */
+.field select, .field select:focus {
+  -webkit-appearance: none; appearance: none; padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238a929c' stroke-width='2'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.field input[type='date'] { display: block; text-align: left; }
+.field input::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
+@media (max-width: 960px) {
+  .topbar { top: calc(10px + env(safe-area-inset-top, 0px)); left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); }
+  .dock { left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
+  .menu-sheet:not([hidden]) { padding-top: calc(96px + env(safe-area-inset-top, 0px)); }
+}
+@media (pointer: coarse) {
+  /* Finger-sized controls (44px is Apple's and close to Android's minimum). */
+  .btn-sm { min-height: 44px; }
+  .pill-wa, .pill-garage, .menu-btn, .icon-btn, .save-btn:not(.btn), .compare-btn:not(.btn), .tray .icon-btn, .ccar-media .save-btn { min-width: 44px; height: 44px; }
+  .pill-garage, .menu-btn, .icon-btn, .save-btn:not(.btn), .compare-btn:not(.btn), .tray .icon-btn, .ccar-media .save-btn { width: 44px; }
+  .story-pill button, .tabs button, .chip-btn { height: 44px; }
+  .seg span { height: 44px; }
+  .link-btn, .composer-alt { padding-block: 10px; margin-block: -6px; display: inline-block; }
+  .logo { min-height: 44px; }
+  .side-concierge, .car-more { min-height: 44px; }
+  .ctable .ccar-media .save-btn { width: 44px; height: 44px; }
+  /* The on-screen keyboard shouldn't push the floating buttons over the field being typed in. They come
+     back after a short delay: tapping a button blurs the field, and they mustn't land on top of that tap. */
+  :is(.dock, .tray) { transition: visibility 0s linear .4s; }
+  html:has(input:focus, textarea:focus, select:focus) :is(.dock, .tray) { visibility: hidden; transition: none; }
+}
+@media (hover: none) { /* a tap shouldn't leave things looking hovered */
+  .btn-amber:hover { transform: none; }
+  .contact-card:hover { transform: none; border-color: var(--line); }
+}
+/* The how-it-works phone takes the height left over by the top bar, text, step pill and dock. */
+@media (max-width: 960px) and (orientation: portrait) {
+  .phone { width: clamp(190px, calc((100vh - 430px) * .8), 290px); height: calc(100vh - 430px); max-height: 540px; }
+  @supports (height: 1svh) { .phone { width: clamp(190px, calc((100svh - 430px) * .8), 290px); height: calc(100svh - 430px); } }
+  .phone-notch { height: 16px; width: 64px; margin-bottom: 8px; }
+}
+@media (max-width: 960px) and (orientation: portrait) and (max-height: 620px) { .phone { display: none; } }
+@media (max-width: 400px) {
+  .hero-title { max-width: none; }
+  .story-pill button { padding: 0 8px; font-size: .74rem; }
+  .story-pill button span { display: none; }
+}
+@media (max-width: 960px) and (prefers-reduced-motion: reduce) { /* not pinned, so no height limit */
+  .phone { display: flex; width: min(290px, 76vw); height: 480px; }
+}
+/* A phone on its side: the how-it-works phone sits beside the text and still fits. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .story-stage { padding: 72px 0 12px; }
+  .story-grid { grid-template-columns: 1fr 180px; gap: 24px; }
+  .phone { width: 180px; height: calc(100vh - 84px); padding: 6px 8px; border-radius: 20px; }
+  @supports (height: 1svh) { .phone { height: calc(100svh - 84px); } }
+  .phone-notch { display: none; }
+  .story-text { min-height: 0; }
+  .story-text h2 { font-size: 1.6rem; }
+  .story-pill { bottom: 10px; left: var(--gutter); transform: none; }
+  .dock { display: none; }
+  .tray { bottom: calc(10px + var(--safe-b)); }
+}
+/* Short phones: two floating bars would cover too much. WhatsApp stays one tap away in the top bar. */
+@media (max-height: 640px) and (max-width: 960px) {
+  html.has-tray .dock { display: none; }
+  html.has-tray .tray { bottom: calc(12px + var(--safe-b)); }
+}
+
 /* Local SEO: areas served, service pages */
 .areas h2 { max-width: 20ch; }
 .area-list { list-style: none; margin: 22px 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -832,7 +903,7 @@ html.menu-open .tray { opacity: 0; pointer-events: none; }
 .ccar-remove { justify-self: start; font-size: .8rem; color: var(--muted); }
 .cadd { display: grid; align-content: center; }
 .cadd-field.is-compact > span { margin-bottom: 6px; }
-.cadd-field select { min-height: 44px; font-size: .88rem; }
+.cadd-field select { min-height: 44px; font-size: 16px; }
 .cfoot .ccell { display: grid; gap: 10px; justify-items: start; padding-top: 14px; }
 .cfoot .btn { width: 100%; padding: 0 10px; }
 .cfoot .link-arrow { font-size: .84rem; }

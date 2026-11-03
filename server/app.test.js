@@ -186,3 +186,26 @@ test('robots, sitemap and structured data help Google find and understand every 
   assert.match(service, /<title>Airport transfers in Pune \| Drive Ease<\/title>/);
   assert.match(service, /"@type":"Service"/);
 });
+
+test('sample-content mode needs an explicit switch and never saves or shows placeholders', async () => {
+  const { sampleMode, publicData } = db;
+  const uri = process.env.MONGODB_URI;
+  try {
+    delete process.env.MONGODB_URI;
+    assert.equal(sampleMode(), false); // a lost database URI must not silently serve samples
+    process.env.SAMPLE_CONTENT = '1';
+    assert.equal(sampleMode(), true);
+    const site = await publicData.site();
+    assert.equal(site.whatsappNumber, '918879790490');
+    assert.deepEqual([site.address, site.about.founderName], ['', '']);
+    assert.deepEqual(await publicData.reviews(), []);
+    assert.equal((await publicData.vehicles()).length, 7);
+    assert.equal((await call('POST', '/api/enquiries', { name: 'Asha', phone: '9876543210' })).status, 503);
+    assert.equal((await call('POST', '/api/auth/login', ADMIN)).status, 503);
+    assert.equal((await call('GET', '/api/vehicles')).status, 200);
+  } finally {
+    process.env.MONGODB_URI = uri;
+    delete process.env.SAMPLE_CONTENT;
+  }
+  assert.equal(sampleMode(), false); // with a database it's ignored
+});

@@ -129,6 +129,8 @@ The project is linked to the Vercel project **drive-ease** (`.vercel/`). `vercel
 
 **Deploy:** `npx vercel --prod`. Or connect the GitHub repo in Vercel → Settings → Git so every push to `main` deploys.
 
+**Without a database:** set `SAMPLE_CONTENT=1` to run the site on the sample cars (viewing and WhatsApp only; admin and the enquiry form answer 503, and placeholder reviews, address and founder are hidden). It is ignored once `MONGODB_URI` is set. Live now at https://drive-ease-beta.vercel.app (project `drive-ease`, team SP TECH), uploaded as a prebuilt output because the CLI's local build needs symlinks that Windows blocks without Developer Mode.
+
 **Custom domain (FR-15):** Vercel → Project → Settings → Domains → add the domain, then create the DNS records it shows at the registrar. HTTPS is issued automatically. Then set `SITE_URL` and redeploy.
 
 **After launch (FR-14):** add the domain in Google Search Console and submit `https://DOMAIN/sitemap.xml`.

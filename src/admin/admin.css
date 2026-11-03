@@ -247,6 +247,7 @@
 .a-toasts { position: fixed; top: 16px; right: 16px; z-index: 100; display: grid; gap: 8px; }
 .a-toast { padding: 12px 16px; border-radius: 10px; background: var(--asphalt); color: #fff; font: 700 .95rem var(--font-display); box-shadow: 0 10px 24px -10px rgba(0,0,0,.5); animation: rise .25s var(--ease) both; }
 .a-toast.bad { background: var(--danger); }
+@media (pointer: coarse) { .a-enquiry select { font-size: 16px; } .a-link { padding-block: 8px; } } /* iPhones zoom on fields under 16px */
 .a-login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 .a-login h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -.01em; }
 
