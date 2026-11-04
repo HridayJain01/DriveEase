@@ -80,7 +80,7 @@ export function Layout() {
           </nav>
           <GarageLink />
           {site && (
-            <a className="pill-wa" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp">
+            <a className="pill-wa" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer" aria-label="Enquire on WhatsApp">
               <Icon name="whatsapp" size={18} /><span>Enquire</span>
             </a>
           )}

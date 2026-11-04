@@ -20,7 +20,9 @@ const Compare = lazy(() => import('./pages/Compare.jsx'));
 const Garage = lazy(() => import('./pages/Garage.jsx'));
 const Service = lazy(() => import('./pages/Service.jsx'));
 const Landing = lazy(() => import('./pages/Landing.jsx')); // its text stays out of the main bundle
-const page = (el) => <Suspense fallback={<div className="wrap skeleton" style={{ height: '60vh', marginTop: 120 }} aria-busy="true" />}>{el}</Suspense>;
+// Padding, not margin: a margin here collapses through <body>, so the whole page jumps when the real page replaces this.
+const Loading = () => <div style={{ minHeight: '100vh', paddingTop: 120 }} aria-busy="true"><div className="wrap skeleton" style={{ height: '60vh' }} /></div>;
+const page = (el) => <Suspense fallback={<Loading />}>{el}</Suspense>;
 
 // Warm the cache for data almost every page needs.
 ['/api/site', '/api/vehicles'].forEach((u) => fetchJson(u).catch(() => {}));
@@ -45,7 +47,7 @@ const router = createBrowserRouter([
       { path: '/fleet', element: <Fleet /> },
       { path: '/fleet/:slug', element: <Vehicle /> },
       { path: '/blog', element: <Blog /> },
-      { path: '/blog/:slug', element: <Suspense fallback={<div className="wrap skeleton" style={{ height: '60vh', marginTop: 40 }} />}><Post /></Suspense> },
+      { path: '/blog/:slug', element: page(<Post />) },
       { path: '/contact', element: <Contact /> },
       { path: '/concierge', element: page(<Concierge />) },
       { path: '/compare', element: page(<Compare />) },

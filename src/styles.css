@@ -1,6 +1,10 @@
 /* Drive Ease — night-drive design system, phone first.
    Graphite + one headlight-amber accent. Display: Archivo Expanded (automotive badging).
    Body: Geist. Data/readouts: Geist Mono. Motion: GSAP (src/motion.jsx). */
+/* Everyday fonts sized to match the web fonts (measured against Arial), so text doesn't jump when they arrive. */
+@font-face { font-family: 'Archivo Fallback'; src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Neue Bold'), local('Roboto Bold'), local('Arial'); font-weight: 500 800; size-adjust: 126%; }
+@font-face { font-family: 'Geist Fallback'; src: local('Arial'), local('Helvetica Neue'), local('Roboto'); font-weight: 400 600; size-adjust: 102%; }
+
 /* Light by default. The hero's enquiry card re-uses these so it reads as a white card on the photo. */
 :root, .hero-form .composer {
   --bg: #f6f4ef;
@@ -33,8 +37,8 @@
   --danger: #c2412d;
   --danger-soft: rgba(194, 65, 45, .08);
   --danger-line: rgba(194, 65, 45, .3);
-  --font-display: 'Archivo', system-ui, sans-serif;
-  --font-body: 'Geist', system-ui, sans-serif;
+  --font-display: 'Archivo', 'Archivo Fallback', system-ui, sans-serif;
+  --font-body: 'Geist', 'Geist Fallback', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
   --gutter: max(clamp(16px, 5vw, 48px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   --ease: cubic-bezier(.16, 1, .3, 1);

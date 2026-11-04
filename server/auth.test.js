@@ -17,7 +17,7 @@ test('tokens round-trip and reject tampering or expiry', () => {
   const [body, sig] = token.split('.');
   const forged = Buffer.from(JSON.stringify({ sub: 'evil', exp: Date.now() + 1e9 })).toString('base64url');
   assert.equal(verifyToken(`${forged}.${sig}`), null);
-  assert.equal(verifyToken(`${body}.x${sig.slice(1)}`), null);
+  assert.equal(verifyToken(`${body}.${sig[0] === 'x' ? 'y' : 'x'}${sig.slice(1)}`), null); // always a different letter
   assert.equal(verifyToken(signToken({ sub: 'abc' }, -1)), null);
   assert.equal(verifyToken('garbage'), null);
 });

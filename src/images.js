@@ -1,5 +1,4 @@
-// Photo addresses at the size a screen needs. No React here, so the server can preload
-// the same hero image the home page will ask for.
+// Photo addresses at the size a screen needs.
 export function img(url, w) {
   if (!url) return '';
   if (url.includes('images.unsplash.com')) return `${url}?w=${w}&q=60&auto=format&fit=crop`;
