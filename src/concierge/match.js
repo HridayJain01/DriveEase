@@ -139,3 +139,12 @@ export function recommend(vehicles = [], a) {
   const alternatives = strong.length ? [] : all.filter((r) => r.tier === 'unsuitable').sort((x, y) => x.fails.length - y.fails.length).slice(0, 3);
   return { top: matches.slice(0, 3), more: matches.slice(3), alternatives, total: vehicles.length };
 }
+
+// Which Concierge trip a service is closest to, so its page can suggest suitable cars.
+export const tripForService = (slug) => (/airport/.test(slug) ? 'airport' : /outstation|trip|tour/.test(slug) ? 'weekend' : /wedding|event|family/.test(slug) ? 'family' : /corporate|business/.test(slug) ? 'business' : '');
+
+// Three cars to show on a page about a kind of trip. Used by the page and the server, so both list the same cars.
+const TYPICAL_GROUP = { airport: { passengers: 2, bags: 2 }, family: { passengers: 5, bags: 3 } };
+export const suggestedCars = (vehicles = [], trip = '') => (trip
+  ? recommend(vehicles, { ...blankAnswers(), trip, passengers: 2, bags: 1, ...TYPICAL_GROUP[trip] }).top.map((r) => r.vehicle)
+  : [...vehicles].sort((a, b) => Number(b.featured) - Number(a.featured)).slice(0, 3));

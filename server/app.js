@@ -1,7 +1,7 @@
 import express from 'express';
 import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, sampleMode, Settings, Stat, Vehicle } from './db.js';
 import { businessDay, sinceDay, validateEvent } from './events.js';
-import { renderPage, robots, sitemap } from './html.js';
+import { llms, renderPage, robots, sitemap } from './html.js';
 import { clearSession, hashPassword, readSession, setSession, verifyPassword } from './auth.js';
 import { dueFilter, enquiryFilter, pageParams, STATUSES, validateEnquiry, validateEnquiryUpdate, validateNote } from './enquiry.js';
 import { cloudinaryConfig, signParams } from './cloudinary.js';
@@ -206,6 +206,7 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 /* ---------- Pages ---------- */
 app.get('/robots.txt', robots);
 app.get('/sitemap.xml', sitemap);
+app.get('/llms.txt', llms);
 app.get('/{*path}', renderPage);
 
 /* ---------- Errors ---------- */

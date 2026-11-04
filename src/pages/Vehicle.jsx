@@ -4,6 +4,7 @@ import { CompareButton, EnquireButton, Gallery, SaveButton, ShareCarButton } fro
 import { assess, TIERS, tripNoun } from '../concierge/match.js';
 import { useApi } from '../lib.js';
 import { vehicleMeta } from '../seo.js';
+import { typeLinks } from '../seo-links.js';
 import { trip as tripStore, useStore } from '../stores.js';
 import { enquiryFormPath } from '../whatsapp.js';
 
@@ -77,6 +78,12 @@ export default function Vehicle() {
           <h2 id="similar-h">Similar cars</h2>
           <div className="car-grid scroll-x">{similar.map((x) => <VehicleCard key={x.slug} v={x} site={site} />)}</div>
         </section>
+      )}
+      {typeLinks(site, all).some((t) => t.match(v)) && (
+        <nav className="wrap type-links" aria-label="Guides for this type of car">
+          <h2 className="h-small">More like this</h2>
+          <ul className="area-list">{typeLinks(site, all).filter((t) => t.match(v)).map((t) => <li key={t.slug}><Link to={`/cars/${t.slug}`}>{t.name} in {site.city}</Link></li>)}</ul>
+        </nav>
       )}
     </>
   );

@@ -49,6 +49,16 @@ export function pageMeta(path, site) {
       title: 'Find the right rental car for your trip',
       description: `Answer four quick questions and our Concierge matches your trip to the right car from our fleet${c}, and explains why. No sign-up.`,
     },
+    '/routes': {
+      title: `Outstation car rental${cityOf(site) ? ` from ${cityOf(site)}` : ''}: popular routes`,
+      h1: `Outstation car rental${cityOf(site) ? ` from ${cityOf(site)}` : ''}`,
+      description: `Popular drives from ${cityOf(site) || 'the city'} with distance and drive time, plus advice on which rental car suits each road. Self-drive or with a driver.`,
+    },
+    '/car-rental': {
+      title: `Car rental by area${c}`,
+      h1: `Car rental by area${c}`,
+      description: `The parts of ${cityOf(site) || 'the city'} we cover, with what suits each one: from airport pickups to a day of meetings. Self-drive or with a driver.`,
+    },
     // Personal, device-specific pages: kept out of search results.
     '/compare': { title: 'Compare cars', description: `Compare up to three ${b} cars side by side: seats, luggage, gearbox and fuel.`, noindex: true },
     '/garage': { title: 'My Garage', description: `Cars you saved from the ${b} fleet.`, noindex: true },
@@ -75,3 +85,10 @@ export const serviceMeta = (s, site) => {
 };
 
 export const postMeta = (p, site) => ({ title: p.title, fullTitle: withBrand(p.title, site), description: p.excerpt });
+
+// Route, area, car type and legal pages keep their title and description with their text (seo-content.js).
+export const landingMeta = (page, site) => ({
+  title: page.title,
+  fullTitle: withBrand(page.title, site),
+  description: typeof page.description === 'function' ? page.description(site) : page.description,
+});

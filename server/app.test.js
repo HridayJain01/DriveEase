@@ -187,6 +187,91 @@ test('robots, sitemap and structured data help Google find and understand every 
   assert.match(service, /"@type":"Service"/);
 });
 
+test('Mumbai pages publish plain text, matching data and an AI summary, only where they are true', async () => {
+  const get = async (p) => { const r = await fetch(`${base}${p}`); return { status: r.status, html: await r.text() }; };
+  if ((await get('/')).status === 503) { console.log('# shell not built: page checks skipped'); return; }
+  const typesOf = (html) => JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)[1])['@graph'].map((x) => x['@type']);
+
+  // Set to Pune, the Mumbai text stays unpublished.
+  assert.equal((await get('/routes/mumbai-to-lonavala')).status, 404);
+  assert.doesNotMatch((await get('/sitemap.xml')).html, /mumbai-to-lonavala/);
+
+  await db.Settings.updateOne({ key: 'site' }, { $set: { city: 'Mumbai', serviceAreas: ['Andheri', 'Thane'] } });
+  try {
+    const route = await get('/routes/mumbai-to-lonavala');
+    assert.equal(route.status, 200);
+    assert.match(route.html, /<title>Mumbai to Lonavala car rental: self-drive or with driver \| Drive Ease<\/title>/);
+    assert.match(route.html, /<div id="root"><div class="ssr">/);
+    assert.match(route.html, /<h1>Mumbai to Lonavala car rental<\/h1>/);
+    assert.match(route.html, /Lonavala is about 83 km from Mumbai/);
+    assert.match(route.html, /How long is the drive from Mumbai to Lonavala\?/);
+    assert.match(route.html, /href="\/fleet\/hyundai-creta"/);
+    assert.match(route.html, /wa\.me\/918879790490\?text=[^"]*Lonavala/);
+    assert.deepEqual(typesOf(route.html), ['AutoRental', 'BreadcrumbList', 'Service', 'FAQPage']);
+
+    const area = await get('/car-rental/andheri');
+    assert.equal(area.status, 200);
+    assert.match(area.html, /<h1>Car rental in Andheri<\/h1>/);
+    assert.deepEqual(typesOf(area.html), ['AutoRental', 'BreadcrumbList', 'Service', 'FAQPage']);
+    assert.equal((await get('/car-rental/bandra')).status, 404); // not listed in Site details
+    assert.equal((await get('/routes/mumbai-to-nowhere')).status, 404);
+
+    const hub = await get('/routes');
+    assert.equal(hub.status, 200);
+    assert.match(hub.html, /href="\/routes\/mumbai-to-pune"/);
+    assert.equal((await get('/car-rental')).status, 200);
+
+    assert.equal((await get('/cars/suv')).status, 200);
+    assert.deepEqual(typesOf((await get('/cars/suv')).html), ['AutoRental', 'BreadcrumbList', 'ItemList', 'FAQPage']);
+    assert.equal((await get('/cars/sedan')).status, 404); // no sedan in this test fleet
+
+    for (const p of ['/privacy', '/terms']) {
+      const legal = await get(p);
+      assert.equal(legal.status, 200, p);
+      assert.match(legal.html, /<link rel="canonical"/, p);
+    }
+
+    for (const [p, text] of [['/', /Car rental in Mumbai/], ['/fleet', /Hyundai Creta/], ['/fleet/hyundai-creta', /Hyundai Creta/], ['/services', /Airport transfers/], ['/services/airport-transfers', /We meet you at arrivals/], ['/about', /About Drive Ease/], ['/contact', /\+91 88797 90490/], ['/concierge', /four quick questions/]]) {
+      const { html } = await get(p);
+      assert.match(html.match(/<div class="ssr">[\s\S]*<\/div><\/div>/)?.[0] || '', text, `${p} should have text without JavaScript`);
+    }
+    assert.doesNotMatch((await get('/compare')).html, /class="ssr"/); // personal pages stay out of search
+
+    const missing = await get('/no-such-page');
+    assert.equal(missing.status, 404);
+    assert.match(missing.html, /<meta name="robots" content="noindex" \/>/);
+
+    const map = (await get('/sitemap.xml')).html;
+    for (const p of ['/routes</loc>', '/routes/mumbai-to-mahabaleshwar<', '/car-rental</loc>', '/car-rental/andheri<', '/cars/suv<', '/privacy<', '/terms<']) assert.ok(map.includes(p), p);
+    assert.doesNotMatch(map, /\/car-rental\/bandra|\/cars\/sedan/);
+
+    const summary = await get('/llms.txt');
+    assert.equal(summary.status, 200);
+    assert.match(summary.html, /^# Drive Ease/);
+    assert.match(summary.html, /Phone and WhatsApp: \+91 88797 90490/);
+    assert.match(summary.html, /no prices/);
+    assert.match(summary.html, /\/routes\/mumbai-to-lonavala\): About 83 km/);
+
+    // Taps from these pages count separately in Insights.
+    const tap = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ kind: 'whatsapp', source: 'seo-page' }) });
+    assert.equal(tap.status, 204);
+    assert.equal(await db.Stat.countDocuments({ source: 'seo-page' }), 1);
+
+    // Text from the admin is escaped, and the verification code can come from the host's settings.
+    await db.Vehicle.updateOne({ name: 'Hyundai Creta' }, { $set: { summary: '<script>alert(1)</script> $& fast' } });
+    await db.Settings.updateOne({ key: 'site' }, { $set: { googleSiteVerification: '' } });
+    process.env.GOOGLE_SITE_VERIFICATION = 'from-env';
+    const fleet = (await get('/fleet')).html;
+    assert.ok(fleet.includes('&lt;script&gt;alert(1)&lt;/script&gt; $&amp; fast'));
+    assert.doesNotMatch(fleet.match(/<div class="ssr">[\s\S]*<\/div><\/div>/)[0], /<script>/);
+    assert.match(fleet, /<meta name="google-site-verification" content="from-env" \/>/);
+  } finally {
+    delete process.env.GOOGLE_SITE_VERIFICATION;
+    await db.Vehicle.updateOne({ name: 'Hyundai Creta' }, { $set: { summary: '' } });
+    await db.Settings.updateOne({ key: 'site' }, { $set: { city: 'Pune', serviceAreas: ['Baner', 'Pune Airport'], googleSiteVerification: 'abc123_XYZ' } });
+  }
+});
+
 test('sample-content mode needs an explicit switch and never saves or shows placeholders', async () => {
   const { sampleMode, publicData } = db;
   const uri = process.env.MONGODB_URI;
@@ -197,6 +282,8 @@ test('sample-content mode needs an explicit switch and never saves or shows plac
     assert.equal(sampleMode(), true);
     const site = await publicData.site();
     assert.equal(site.whatsappNumber, '918879790490');
+    assert.equal(site.city, 'Mumbai');
+    for (const svc of site.services) assert.ok(svc.details.split(/\s+/).length >= 80, `${svc.name} needs a real description`);
     assert.deepEqual([site.address, site.about.founderName], ['', '']);
     assert.deepEqual(await publicData.reviews(), []);
     assert.equal((await publicData.vehicles()).length, 7);

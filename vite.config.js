@@ -10,5 +10,5 @@ const renameShell = { name: 'rename-shell', enforce: 'post', generateBundle(_, b
 export default defineConfig({
   plugins: [react(), renameShell],
   // host: true also listens on the local network, so phones on the same Wi-Fi can open the dev site.
-  server: { port: 5173, host: true, proxy: { '/api': api, '/sitemap.xml': api, '/robots.txt': api } },
+  server: { port: 5173, host: true, proxy: { '/api': api, '/sitemap.xml': api, '/robots.txt': api, '/llms.txt': api } },
 });

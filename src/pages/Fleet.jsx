@@ -1,7 +1,8 @@
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { CardSkeletons, ErrorState, PageHead, Seo, VehicleCard } from '../components.jsx';
 import { useApi } from '../lib.js';
 import { pageMeta } from '../seo.js';
+import { typeLinks } from '../seo-links.js';
 
 export default function Fleet() {
   const { data: site } = useApi('/api/site');
@@ -32,6 +33,12 @@ export default function Fleet() {
           {shown ? shown.map((v) => <VehicleCard key={v.slug} v={v} site={site} />) : <CardSkeletons n={6} />}
         </div>
         {shown?.length === 0 && <p className="muted">No {type} cars right now. <button className="link-btn" onClick={() => setParams({})}>Show all cars</button></p>}
+        {typeLinks(site, vehicles).length > 0 && (
+          <nav className="type-links" aria-label="Guides by car type">
+            <h2 className="h-small">Which type suits your trip?</h2>
+            <ul className="area-list">{typeLinks(site, vehicles).map((t) => <li key={t.slug}><Link to={`/cars/${t.slug}`}>{t.name}</Link></li>)}</ul>
+          </nav>
+        )}
       </div>
     </>
   );

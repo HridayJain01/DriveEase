@@ -139,11 +139,11 @@ export const Stat = models.Stat || model('Stat', statSchema);
 // Sample-content mode: lets the site go live for viewing and WhatsApp enquiries before a database
 // exists. It must be switched on explicitly (SAMPLE_CONTENT=1), so a production site that has merely
 // lost its MONGODB_URI shows an error rather than silently serving samples. Anything that would look
-// like real business facts but isn't (reviews, address, founder, socials) is left out.
+// like real business facts but isn't (the placeholder reviews) is left out.
 export const sampleMode = () => !process.env.MONGODB_URI && process.env.SAMPLE_CONTENT === '1';
 const byOrder = (a, b) => a.order - b.order;
 const sample = {
-  site: () => ({ ...sampleSite, city: '', address: '', mapUrl: '', socials: {}, about: { ...sampleSite.about, founderName: '', founderRole: '', founderQuote: '' } }),
+  site: () => sampleSite,
   vehicles: () => [...sampleVehicles].sort(byOrder),
   vehicle: (slug) => sampleVehicles.find((v) => v.slug === slug) || null,
   carDates: () => sampleVehicles.map(({ slug }) => ({ slug })),

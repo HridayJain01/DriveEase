@@ -19,6 +19,7 @@ const Concierge = lazy(() => import('./pages/Concierge.jsx'));
 const Compare = lazy(() => import('./pages/Compare.jsx'));
 const Garage = lazy(() => import('./pages/Garage.jsx'));
 const Service = lazy(() => import('./pages/Service.jsx'));
+const Landing = lazy(() => import('./pages/Landing.jsx')); // its text stays out of the main bundle
 const page = (el) => <Suspense fallback={<div className="wrap skeleton" style={{ height: '60vh', marginTop: 120 }} aria-busy="true" />}>{el}</Suspense>;
 
 // Warm the cache for data almost every page needs.
@@ -34,6 +35,13 @@ const router = createBrowserRouter([
       { path: '/about', element: <About /> },
       { path: '/services', element: <Services /> },
       { path: '/services/:slug', element: page(<Service />) },
+      { path: '/routes', element: page(<Landing kind="routes" />) },
+      { path: '/routes/:slug', element: page(<Landing kind="route" />) },
+      { path: '/car-rental', element: page(<Landing kind="areas" />) },
+      { path: '/car-rental/:slug', element: page(<Landing kind="area" />) },
+      { path: '/cars/:slug', element: page(<Landing kind="type" />) },
+      { path: '/privacy', element: page(<Landing kind="/privacy" />) },
+      { path: '/terms', element: page(<Landing kind="/terms" />) },
       { path: '/fleet', element: <Fleet /> },
       { path: '/fleet/:slug', element: <Vehicle /> },
       { path: '/blog', element: <Blog /> },

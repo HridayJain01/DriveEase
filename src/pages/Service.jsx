@@ -1,13 +1,11 @@
 import { Link, useParams } from 'react-router';
 import { CardSkeletons, ErrorState, Icon, PageHead, Seo, VehicleCard } from '../components.jsx';
 import { WhatsAppQr } from '../features.jsx';
-import { blankAnswers, recommend } from '../concierge/match.js';
+import { suggestedCars, tripForService } from '../concierge/match.js';
 import { useApi, waLink } from '../lib.js';
 import { serviceMeta } from '../seo.js';
+import { areaLinks, routeLinks } from '../seo-links.js';
 import { CtaBand } from './Home.jsx';
-
-// Which Concierge trip a service is closest to, so its page can suggest suitable cars.
-const tripFor = (slug) => (/airport/.test(slug) ? 'airport' : /outstation|trip|tour/.test(slug) ? 'weekend' : /wedding|event|family/.test(slug) ? 'family' : /corporate|business/.test(slug) ? 'business' : '');
 
 // One landing page per service (e.g. /services/airport), so each can rank for its own searches.
 export default function Service() {
@@ -19,10 +17,8 @@ export default function Service() {
   const s = site.services?.find((x) => x.slug === slug);
   if (!s) return <ErrorState error={{ message: 'not-found' }} what="service" />;
 
-  const trip = tripFor(s.slug);
-  const cars = !vehicles ? null : trip
-    ? recommend(vehicles, { ...blankAnswers(), trip, passengers: 2, bags: trip === 'airport' ? 2 : 1 }).top.map((r) => r.vehicle)
-    : [...vehicles].sort((a, b) => Number(b.featured) - Number(a.featured)).slice(0, 3);
+  const trip = tripForService(s.slug);
+  const cars = vehicles && suggestedCars(vehicles, trip);
   const others = site.services.filter((x) => x.slug !== s.slug);
   const meta = serviceMeta(s, site);
   const ask = `${site.whatsappMessage}\n\nService: ${s.name}`;
@@ -56,6 +52,18 @@ export default function Service() {
         <div className="car-grid">{cars ? cars.map((v) => <VehicleCard key={v.slug} v={v} site={site} />) : <CardSkeletons n={3} />}</div>
       </section>
 
+      {trip === 'weekend' && routeLinks(site).length > 0 && (
+        <section className="section wrap" aria-labelledby="svc-routes-h">
+          <h2 id="svc-routes-h" className="h-small">Popular routes from {site.city}</h2>
+          <ul className="area-list">{routeLinks(site).map((r) => <li key={r.slug}><Link to={`/routes/${r.slug}`}>{site.city} to {r.place}</Link></li>)}</ul>
+        </section>
+      )}
+      {trip === 'airport' && areaLinks(site).some((a) => a.slug === 'mumbai-airport') && (
+        <section className="section wrap" aria-labelledby="svc-airport-h">
+          <h2 id="svc-airport-h" className="h-small">Flying from Mumbai?</h2>
+          <p><Link className="link-arrow wraps" to="/car-rental/mumbai-airport">What to share for your Mumbai Airport pickup<Icon name="arrow" size={16} /></Link></p>
+        </section>
+      )}
       {others.length > 0 && (
         <section className="section wrap" aria-labelledby="svc-more-h">
           <h2 id="svc-more-h" className="h-small">Other ways to rent</h2>

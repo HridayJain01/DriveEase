@@ -7,6 +7,7 @@ import { Announcer, CompareButton, CompareTray, EnquireButton, EnquiryDialog, Sa
 import { garage, useStore } from './stores.js';
 import { whatsappUrl } from './whatsapp.js';
 import { track, trackClicks } from './track.js';
+import { areaLinks, routeLinks, typeLinks } from './seo-links.js';
 
 export { Icon };
 
@@ -120,6 +121,10 @@ function GarageLink() {
 }
 
 function Footer({ site }) {
+  const { data: vehicles } = useApi('/api/vehicles');
+  const routes = routeLinks(site);
+  const areas = areaLinks(site);
+  const types = typeLinks(site, vehicles);
   return (
     <footer className="footer">
       <div className="wrap">
@@ -129,6 +134,24 @@ function Footer({ site }) {
             <h2 className="label">Explore</h2>
             <ul>{nav.map(([to, label]) => <li key={to}><Link to={to}>{label}</Link></li>)}<li><Link to="/compare">Compare cars</Link></li><li><Link to="/garage">My Garage</Link></li><li><Link to="/contact#reviews">Reviews</Link></li></ul>
           </div>
+          {routes.length > 0 && (
+            <div>
+              <h2 className="label"><Link to="/routes">Popular routes</Link></h2>
+              <ul>{routes.map((r) => <li key={r.slug}><Link to={`/routes/${r.slug}`}>{site.city} to {r.place}</Link></li>)}</ul>
+            </div>
+          )}
+          {areas.length > 0 && (
+            <div>
+              <h2 className="label"><Link to="/car-rental">Areas</Link></h2>
+              <ul>{areas.map((a) => <li key={a.slug}><Link to={`/car-rental/${a.slug}`}>{a.name}</Link></li>)}</ul>
+            </div>
+          )}
+          {types.length > 0 && (
+            <div>
+              <h2 className="label">Car types</h2>
+              <ul>{types.map((t) => <li key={t.slug}><Link to={`/cars/${t.slug}`}>{t.name}</Link></li>)}</ul>
+            </div>
+          )}
           <div>
             <h2 className="label">Talk to us</h2>
             <ul>
@@ -151,6 +174,7 @@ function Footer({ site }) {
         <div className="footer-base">
           <span>© {new Date().getFullYear()} {site.businessName}</span>
           <span>Enquiries only. Bookings are confirmed by our team.</span>
+          <span><Link to="/privacy">Privacy</Link> · <Link to="/terms">Terms</Link></span>
         </div>
       </div>
     </footer>

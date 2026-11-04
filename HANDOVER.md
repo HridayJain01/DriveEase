@@ -74,15 +74,16 @@ Add only **genuine** reviews from real customers who have agreed to be quoted. T
 
 ## Getting found on Google
 
-The website is set up for Google (titles, headings, a page per service, structured data, a sitemap). What moves a local car rental up the results is mostly done outside the website, and only you can do it:
+The website is set up for Google: titles, headings, a page per service, route, area and car type, structured data, a sitemap and text that search engines and AI tools can read without running JavaScript. `docs/seo-plan.md` shows which page targets which search. What moves a local car rental up the results is mostly done outside the website, and only you can do it:
 
-1. **Site details → City** and **Areas you serve.** Every page title and heading uses the city ("Car rental in Pune"), so it must be right. Add the airport, nearby areas and towns you often drive to.
+1. **Site details → City** and **Areas you serve.** Every page title and heading uses the city ("Car rental in Mumbai"), so it must be right. **Check the areas now:** Mumbai Airport, Andheri, Bandra, Dadar, Powai, Borivali and South Mumbai were added as a first list. Remove any you don't serve, and its page comes off the website. A new area shows on the home page, but its own page has to be written first.
 2. **Google Business Profile** (business.google.com): create or claim it with *exactly* the same business name, address and phone number as the website. Pick the category "Car rental agency", add your hours, the website address, and real photos of your cars and office. This is what puts you in the map results.
 3. **Google reviews:** ask every happy customer (the **Ask for a Google review** button on confirmed enquiries does it in one tap). Reply to every review.
 4. **Search Console** (search.google.com/search-console): add the website, choose *HTML tag*, paste the code into **Site details → Google**, save, then press *Verify*. Then submit `your-website/sitemap.xml` under *Sitemaps*.
 5. **Same details everywhere:** list the business on Justdial, Sulekha and similar directories with the same name, address and phone.
 6. **Service pages:** under **Site details → Services**, write 150–300 words for each service (what's included, typical trips, areas). Each one is its own page on Google.
-7. **Real photos** of your own cars, and a blog post now and then about local trips ("Pune to Lonavala by car"), keep the site fresh and trustworthy.
+7. **Real photos** of your own cars, and a blog post now and then about local trips ("Mumbai to Shirdi by car"), keep the site fresh and trustworthy.
+8. **Read the drafts.** Check the route advice, service text, FAQs, privacy policy and terms, since they speak for your business. Terms and privacy are worth showing to a lawyer. Road and airport details change, so check them every few months.
 
 Rankings take weeks to months to build. Search Console shows which searches you appear for.
 

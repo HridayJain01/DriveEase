@@ -5,6 +5,7 @@ import { formatDate, img, telLink, tripMessage, useApi, waLink } from '../lib.js
 import { calm, Count, gsap, Reveal, ScrollTrigger, useGSAP, useSplitReveal } from '../motion.jsx';
 import { TRIPS } from '../concierge/match.js';
 import { pageMeta } from '../seo.js';
+import { areaLinks, routeLinks } from '../seo-links.js';
 
 export default function Home() {
   const { data: site } = useApi('/api/site');
@@ -98,9 +99,18 @@ function Areas({ site }) {
       <p className="eyebrow">Where we drive</p>
       <h2 id="areas-h">Car rental across {site.city && !/^your city$/i.test(site.city) ? site.city : 'the city'} and nearby.</h2>
       <ul className="area-list">
-        {site.serviceAreas.map((a) => <li key={a}><Icon name="pin" size={16} />{a}</li>)}
+        {site.serviceAreas.map((a) => {
+          const page = areaLinks(site).find((x) => x.name === a);
+          return <li key={a}><Icon name="pin" size={16} />{page ? <Link to={`/car-rental/${page.slug}`}>{a}</Link> : a}</li>;
+        })}
       </ul>
       <p className="muted">Pickup somewhere else? <a data-track="whatsapp" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nPickup area: `)} target="_blank" rel="noreferrer">Ask us on WhatsApp</a>.</p>
+      {routeLinks(site).length > 0 && (
+        <>
+          <h3 className="h-small"><Link to="/routes">Popular drives from {site.city}</Link></h3>
+          <ul className="area-list">{routeLinks(site).map((r) => <li key={r.slug}><Link to={`/routes/${r.slug}`}>{r.place}</Link></li>)}</ul>
+        </>
+      )}
     </section>
   );
 }

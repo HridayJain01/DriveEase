@@ -4,7 +4,7 @@
 import { SOURCES } from './enquiry.js';
 
 export const KINDS = ['whatsapp', 'share'];
-export const EVENT_SOURCES = [...SOURCES, 'general'];
+export const EVENT_SOURCES = [...SOURCES, 'general', 'seo-page'];
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Returns { data } or { error }. `car` is '' for general (not car-specific) taps.

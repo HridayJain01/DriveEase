@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from './api.js';
 
 const RANGES = [[7, 'Last 7 days'], [30, 'Last 30 days'], [90, 'Last 90 days']];
-const SOURCES = { 'car-page': 'Car cards & pages', concierge: 'Concierge', compare: 'Compare', garage: 'My Garage', general: 'General buttons', form: 'Forms' };
+const SOURCES = { 'car-page': 'Car cards & pages', concierge: 'Concierge', compare: 'Compare', garage: 'My Garage', general: 'General buttons', form: 'Forms', 'seo-page': 'Route, area & car type pages' };
 
 /* ---------- Insights: which cars people ask about ---------- */
 export default function Insights() {
