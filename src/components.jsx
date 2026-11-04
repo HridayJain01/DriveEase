@@ -14,7 +14,7 @@ export { Icon };
 /* ---------- Brand ---------- */
 export function Logo() {
   return (
-    <Link to="/" className="logo" aria-label="Drive Ease home">
+    <Link to="/" className="logo" aria-label="DriveEase home">
       <span className="logo-mark" aria-hidden="true" />
       <span>Drive<b>Ease</b></span>
     </Link>

@@ -35,13 +35,7 @@ export const waLink = (number, text) => whatsappUrl(number, text) || '/contact#e
 export const telLink = (phone) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
 // Resizes Unsplash/Cloudinary images on their CDNs so we never ship a 4000px photo to a phone.
-export function img(url, w) {
-  if (!url) return '';
-  if (url.includes('images.unsplash.com')) return `${url}?w=${w}&q=70&auto=format&fit=crop`;
-  if (url.includes('res.cloudinary.com')) return url.replace('/upload/', `/upload/f_auto,q_auto,c_limit,w_${w}/`);
-  return url;
-}
-export const srcSet = (url, widths = [480, 800, 1200]) => widths.map((w) => `${img(url, w)} ${w}w`).join(', ');
+export { heroSrcSet, img, srcSet } from './images.js';
 
 // A bare yyyy-mm-dd (trip and follow-up dates) is a calendar day, so it's read in local time;
 // `new Date('2026-11-02')` would be UTC midnight and show the previous day west of UTC.

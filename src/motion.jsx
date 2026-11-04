@@ -29,8 +29,11 @@ export function Reveal({ as: Tag = 'div', stagger = 0.08, y = 32, children, ...r
 export function useSplitReveal(ref, deps = []) {
   useGSAP(() => {
     if (calm() || !ref.current) return;
-    const split = SplitText.create(ref.current, { type: 'lines', mask: 'lines', linesClass: 'line' });
-    gsap.from(split.lines, { yPercent: 110, duration: 1.1, ease: 'expo.out', stagger: 0.09, delay: 0.1 });
+    // autoSplit re-measures the lines when the web font arrives. Lines keep their words in order, so screen readers need no label.
+    const split = SplitText.create(ref.current, {
+      type: 'lines', mask: 'lines', linesClass: 'line', aria: 'none', autoSplit: true,
+      onSplit: (self) => gsap.from(self.lines, { yPercent: 110, duration: 1.1, ease: 'expo.out', stagger: 0.09, delay: 0.1 }),
+    });
     return () => split.revert();
   }, { dependencies: deps, scope: ref });
 }

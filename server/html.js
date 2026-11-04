@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { publicData as read } from './db.js';
 import { esc, frame, textOf } from './prerender.js';
+import { heroSrcSet } from '../src/images.js';
 import { cityOf, landingMeta, pageMeta, postMeta, serviceMeta, vehicleMeta } from '../src/seo.js';
 import { AREAS, CAR_TYPES, LEGAL, ROUTES } from '../src/seo-content.js';
 import { areaLinks, carsOfType, CONTENT_UPDATED, routeLinks, typeLinks } from '../src/seo-links.js';
@@ -220,6 +221,8 @@ export async function renderPage(req, res) {
     `<meta property="og:url" content="${esc(url)}" />`,
     image && `<meta property="og:image" content="${esc(image)}" />`,
     image && '<meta name="twitter:card" content="summary_large_image" />',
+    // The hero photo is the biggest thing on the home page, so fetch it before the app has loaded.
+    path === '/' && cover && `<link rel="preload" as="image" imagesrcset="${esc(heroSrcSet(cover))}" imagesizes="100vw" fetchpriority="high" />`,
     `<script type="application/ld+json">${json(ld)}</script>`,
     `<script>window.__DATA__=${json({ '/api/site': site, '/api/vehicles': vehicles, ...page.data })}</script>`,
   ].filter(Boolean).join('\n    ');

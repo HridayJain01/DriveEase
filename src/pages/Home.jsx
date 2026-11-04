@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { CardSkeletons, GoogleReviewLink, Icon, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
-import { formatDate, img, telLink, tripMessage, useApi, waLink } from '../lib.js';
+import { formatDate, heroSrcSet, img, telLink, tripMessage, useApi, waLink } from '../lib.js';
 import { calm, Count, gsap, Reveal, ScrollTrigger, useGSAP, useSplitReveal } from '../motion.jsx';
 import { TRIPS } from '../concierge/match.js';
 import { pageMeta } from '../seo.js';
@@ -68,7 +68,7 @@ function Hero({ site, vehicles, lead }) {
   return (
     <section className="hero" ref={root}>
       <div className="hero-visual" aria-hidden="true">
-        {lead && <img className="hero-car" src={img(lead.images?.[0], 1200)} srcSet={`${img(lead.images?.[0], 700)} 700w, ${img(lead.images?.[0], 1400)} 1400w`} sizes="100vw" alt="" fetchPriority="high" />}
+        {lead && <img className="hero-car" src={img(lead.images?.[0], 1000)} srcSet={heroSrcSet(lead.images?.[0])} sizes="100vw" alt="" fetchPriority="high" />}
         <span className="hero-beam" />
       </div>
       <div className="wrap hero-inner">
