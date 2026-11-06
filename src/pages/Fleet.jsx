@@ -36,7 +36,7 @@ export default function Fleet() {
         {typeLinks(site, vehicles).length > 0 && (
           <nav className="type-links" aria-label="Guides by car type">
             <h2 className="h-small">Which type suits your trip?</h2>
-            <ul className="area-list">{typeLinks(site, vehicles).map((t) => <li key={t.slug}><Link to={`/cars/${t.slug}`}>{t.name}</Link></li>)}</ul>
+            <ul className="area-list">{typeLinks(site, vehicles).map((t) => <li key={t.slug}><Link to={`/cars/${t.slug}`}>{t.name}</Link></li>)}<li><Link to="/which-car-fits">Will my group and bags fit?</Link></li></ul>
           </nav>
         )}
       </div>

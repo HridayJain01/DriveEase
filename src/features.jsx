@@ -32,10 +32,11 @@ export function Announcer() {
 // scanning it with a phone opens the same chat, message included.
 export function useDesktop() {
   const query = '(min-width: 900px) and (hover: hover) and (pointer: fine)';
-  const [on, setOn] = useState(() => typeof matchMedia === 'function' && matchMedia(query).matches);
+  const [on, setOn] = useState(false); // the server can't know the screen, so this is decided once loaded
   useEffect(() => {
     const m = matchMedia(query);
     const change = () => setOn(m.matches);
+    change();
     m.addEventListener('change', change);
     return () => m.removeEventListener('change', change);
   }, []);
@@ -210,7 +211,7 @@ export function EnquiryDialog({ site }) {
             <div className="sheet-missing">
               <p className="form-alert" role="alert">WhatsApp enquiries aren’t set up on this website yet. Please use one of these instead.</p>
               <Link className="btn btn-amber btn-block" to={formPath} onClick={close}>Send an enquiry form</Link>
-              {site?.phone && <a className="btn btn-glass btn-block" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>}
+              {site?.phone && <a className="btn btn-glass btn-block" data-track="call" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>}
               {site?.email && <a className="btn btn-glass btn-block" href={`mailto:${site.email}?subject=${encodeURIComponent('Car rental enquiry')}&body=${encodeURIComponent(text)}`}><Icon name="mail" size={18} />Email us</a>}
             </div>
           )}

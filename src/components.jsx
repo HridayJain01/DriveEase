@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
 import { img, srcSet, telLink, today, tripMessage, useApi, waLink } from './lib.js';
-import { Reveal, ScrollTrigger } from './motion.jsx';
+import { refreshScroll, Reveal } from './motion.jsx';
 import { Icon } from './icons.jsx';
 import { Announcer, CompareButton, CompareTray, EnquireButton, EnquiryDialog, SaveButton } from './features.jsx';
 import { garage, useStore } from './stores.js';
 import { whatsappUrl } from './whatsapp.js';
-import { track, trackClicks } from './track.js';
+import { handOverEarlyActions } from './early.js';
+import { startAnalytics, track, trackClicks } from './track.js';
 import { areaLinks, routeLinks, typeLinks } from './seo-links.js';
 
 export { Icon };
@@ -32,6 +33,10 @@ export function Seo({ title, fullTitle, description }) {
 }
 
 /* ---------- Layout ---------- */
+// Shown only while moving to a page whose code hasn't downloaded yet. Padding, not margin: a margin here
+// collapses through <body>, so the whole page would jump when the real page replaces this.
+const Loading = () => <div style={{ minHeight: '100vh', paddingTop: 120 }} aria-busy="true"><div className="wrap skeleton" style={{ height: '60vh' }} /></div>;
+
 const nav = [
   ['/concierge', 'Concierge'],
   ['/fleet', 'Fleet'],
@@ -40,6 +45,27 @@ const nav = [
   ['/blog', 'Journal'],
   ['/contact', 'Contact'],
 ];
+
+// Sits beside the page content, so this runs once React has taken over that content.
+function ContentLive() {
+  useEffect(handOverEarlyActions, []);
+  return null;
+}
+
+// The server-drawn page can be scrolled before React takes over, and React Router's ScrollRestoration
+// would then send the visitor back to the top. So the position is noted just before it runs, and put back just after.
+let startY = null;
+function NoteScroll() {
+  useLayoutEffect(() => { if (startY === null) startY = scrollY; }, []);
+  return null;
+}
+function KeepScroll() {
+  useLayoutEffect(() => {
+    if (startY > 0 && scrollY !== startY) scrollTo(0, startY);
+    startY = -1; // only on the first load
+  }, []);
+  return null;
+}
 
 export function Layout() {
   const { data: site } = useApi('/api/site');
@@ -50,6 +76,7 @@ export function Layout() {
   useEffect(() => setOpen(false), [pathname, hash]);
   useEffect(() => { // counts taps on WhatsApp links for the admin's Insights page (anonymous)
     document.addEventListener('click', trackClicks);
+    startAnalytics();
     return () => document.removeEventListener('click', trackClicks);
   }, []);
   useEffect(() => {
@@ -65,7 +92,7 @@ export function Layout() {
   }, []);
   useEffect(() => {
     if (hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }));
-    const t = setTimeout(() => ScrollTrigger.refresh(), 400); // new page, new layout: re-measure scroll animations
+    const t = setTimeout(refreshScroll, 400); // new page, new layout: re-measure scroll animations
     return () => clearTimeout(t);
   }, [pathname, hash]);
 
@@ -95,18 +122,20 @@ export function Layout() {
         ))}
         {site && (
           <div className="menu-foot">
-            <a href={telLink(site.phone)}><Icon name="phone" size={16} />{site.phone}</a>
+            <a data-track="call" href={telLink(site.phone)}><Icon name="phone" size={16} />{site.phone}</a>
             <span>{site.hours}</span>
           </div>
         )}
       </nav>
-      <main id="main"><Outlet /></main>
+      <main id="main"><Suspense fallback={<Loading />}><Outlet /><ContentLive /></Suspense></main>
       {site && <Footer site={site} />}
       {site && <Dock site={site} />}
       <CompareTray />
       <EnquiryDialog site={site} />
       <Announcer />
+      <NoteScroll />
       <ScrollRestoration />
+      <KeepScroll />
     </>
   );
 }
@@ -132,7 +161,7 @@ function Footer({ site }) {
         <div className="footer-grid">
           <div>
             <h2 className="label">Explore</h2>
-            <ul>{nav.map(([to, label]) => <li key={to}><Link to={to}>{label}</Link></li>)}<li><Link to="/compare">Compare cars</Link></li><li><Link to="/garage">My Garage</Link></li><li><Link to="/contact#reviews">Reviews</Link></li></ul>
+            <ul>{nav.map(([to, label]) => <li key={to}><Link to={to}>{label}</Link></li>)}<li><Link to="/which-car-fits">Which car fits?</Link></li><li><Link to="/compare">Compare cars</Link></li><li><Link to="/garage">My Garage</Link></li><li><Link to="/contact#reviews">Reviews</Link></li></ul>
           </div>
           {routes.length > 0 && (
             <div>
@@ -155,7 +184,7 @@ function Footer({ site }) {
           <div>
             <h2 className="label">Talk to us</h2>
             <ul>
-              <li><a href={telLink(site.phone)}>{site.phone}</a></li>
+              <li><a data-track="call" href={telLink(site.phone)}>{site.phone}</a></li>
               <li><a data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer">WhatsApp</a></li>
               {site.googleReviewUrl && <li><a href={site.googleReviewUrl} target="_blank" rel="noreferrer">Review us on Google</a></li>}
               {site.whatsappCatalogueUrl && <li><a href={site.whatsappCatalogueUrl} target="_blank" rel="noreferrer">WhatsApp catalogue</a></li>}
@@ -185,7 +214,7 @@ function Footer({ site }) {
 function Dock({ site }) {
   return (
     <aside className="dock" aria-label="Quick contact">
-      <a className="dock-call" href={telLink(site.phone)} aria-label={`Call ${site.phone}`}><Icon name="phone" size={18} /><span>Call</span></a>
+      <a className="dock-call" data-track="call" href={telLink(site.phone)} aria-label={`Call ${site.phone}`}><Icon name="phone" size={18} /><span>Call</span></a>
       <a className="dock-wa" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" size={18} />WhatsApp us</a>
     </aside>
   );
@@ -194,8 +223,10 @@ function Dock({ site }) {
 /* ---------- Media & content ---------- */
 export function Photo({ src, alt, sizes = '(max-width: 700px) 100vw, 50vw', className = '', eager = false }) {
   const [broken, setBroken] = useState(false);
+  const ref = useRef();
+  useEffect(() => { if (ref.current?.complete && !ref.current.naturalWidth) setBroken(true); }, []); // failed before React took over: onError never fired
   if (!src || broken) return <div className={`photo-fallback ${className}`} role="img" aria-label={alt}><Icon name="car" size={40} /></div>;
-  return <img className={className} src={img(src, 800)} srcSet={srcSet(src)} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setBroken(true)} />;
+  return <img ref={ref} className={className} src={img(src, 640)} srcSet={srcSet(src)} sizes={sizes} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setBroken(true)} />;
 }
 
 // A spec the admin hasn't filled in shows as a dash ("not listed" to screen readers), never a guess.
@@ -283,6 +314,24 @@ export function ReviewList({ limit, marquee }) {
   );
 }
 
+export function CtaBand({ site }) {
+  return (
+    <section className="cta">
+      <div className="wrap">
+        <Reveal>
+          <p className="eyebrow">Ready when you are</p>
+          <h2>Where to <em>next?</em></h2>
+          <p className="lede">Send your dates and destination. We’ll reply with the cars that fit.</p>
+          <div className="hero-actions">
+            <a className="btn btn-amber" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />WhatsApp us</a>
+            <a className="btn btn-glass" data-track="call" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 // h1: the page's search heading (e.g. "Cars for rent in Pune"), shown small above the big title,
 // which then becomes a styled paragraph. Without it, the big title is the h1.
 export function PageHead({ eyebrow, h1, title, children }) {
@@ -333,20 +382,21 @@ export function TripComposer({ site, vehicles, fixedCar, title = 'Get a quote on
   }
 
   return (
-    <form className="composer" onSubmit={send} aria-labelledby="composer-title">
+    <form className="composer" action="/contact" onSubmit={send} aria-labelledby="composer-title">
       <h2 id="composer-title" className="composer-title">{title}</h2>
-      <label className="field field-icon"><span>Pickup</span><Icon name="pin" size={18} /><input value={t.from} onChange={set('from')} placeholder="e.g. Airport T2" maxLength={120} required /></label>
-      <label className="field field-icon"><span>Drop-off</span><Icon name="pin" size={18} /><input value={t.to} onChange={set('to')} placeholder="e.g. Lonavala" maxLength={120} /></label>
+      <label className="field field-icon"><span>Pickup</span><Icon name="pin" size={18} /><input name="pickupLocation" value={t.from} onChange={set('from')} placeholder="e.g. Airport T2" maxLength={120} required /></label>
+      <label className="field field-icon"><span>Drop-off</span><Icon name="pin" size={18} /><input name="destination" value={t.to} onChange={set('to')} placeholder="e.g. Lonavala" maxLength={120} /></label>
       {!fixedCar && (
         <label className="field field-icon"><span>Car</span><Icon name="car" size={18} />
-          <select value={t.car} onChange={set('car')}>
+          <select name="vehicle" value={t.car} onChange={set('car')}>
             <option value="">Any car — suggest one</option>
             {vehicles?.map((v) => <option key={v.slug} value={v.name}>{v.name} · {v.category}</option>)}
           </select>
         </label>
       )}
-      <button className="btn btn-amber btn-block btn-lg"><Icon name="whatsapp" />Enquire now</button>
+      <button className="btn btn-amber btn-block btn-lg" data-native=""><Icon name="whatsapp" />Enquire now</button>
       <Link className="composer-alt" to={formLink}>Prefer a callback? Send the enquiry form</Link>
+      <p className="form-note">We only use this to reply about your trip, and there's no payment here. <Link to="/privacy">Privacy</Link></p>
     </form>
   );
 }
@@ -359,6 +409,7 @@ export function EnquiryForm({ site, initial = {} }) {
   const [values, setValues] = useState(() => Object.fromEntries(FIELDS.map((f) => [f, initial[f] || ''])));
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // idle | sending | sent | failed
+  const [startOpen] = useState(() => FIELDS.some((f) => f !== 'name' && f !== 'phone' && initial[f])); // arrived with a trip filled in
 
   const set = (k) => (e) => { setValues((v) => ({ ...v, [k]: e.target.value })); setErrors((x) => ({ ...x, [k]: undefined })); };
 
@@ -400,7 +451,9 @@ export function EnquiryForm({ site, initial = {} }) {
         {field('name', 'Your name', { required: true, autoComplete: 'name', minLength: 2, maxLength: 80 })}
         {field('phone', 'Phone', { required: true, type: 'tel', autoComplete: 'tel', inputMode: 'tel', pattern: '\\+?[\\d\\s\\-]{10,16}', placeholder: '98765 43210' })}
       </div>
-      {field('email', 'Email (optional)', { type: 'email', autoComplete: 'email', maxLength: 120 })}
+      <details className="form-more" open={startOpen}>
+        <summary>Add trip details (optional)<Icon name="down" size={16} /></summary>
+      {field('email', 'Email', { type: 'email', autoComplete: 'email', maxLength: 120 })}
       <label className="field">
         <span>Car you’re interested in</span>
         <select name="vehicle" value={values.vehicle} onChange={set('vehicle')}>
@@ -425,6 +478,7 @@ export function EnquiryForm({ site, initial = {} }) {
         <span>Anything else?</span>
         <textarea name="message" rows="3" value={values.message} onChange={set('message')} maxLength={1000} placeholder="Timing, child seat, chauffeur…" />
       </label>
+      </details>
       <input className="hp" name="company" tabIndex="-1" autoComplete="off" aria-hidden="true" />
       {status === 'failed' && <p className="form-alert" role="alert">Your enquiry didn’t go through. Check your connection and try again{site ? ', or message us on WhatsApp' : ''}.</p>}
       <button className="btn btn-amber btn-block" disabled={status === 'sending'}>{status === 'sending' ? 'Sending…' : 'Send enquiry'}</button>

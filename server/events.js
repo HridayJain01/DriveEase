@@ -1,9 +1,9 @@
-// Anonymous interest counters: how often visitors tap "Open WhatsApp" or share a car.
+// Anonymous interest counters: how often visitors tap "Open WhatsApp", call, or share a car.
 // Only a day, the action, a public car slug and where on the site it happened are kept.
 // No IP address, device, cookie or message text is ever stored.
 import { SOURCES } from './enquiry.js';
 
-export const KINDS = ['whatsapp', 'share'];
+export const KINDS = ['whatsapp', 'share', 'call'];
 export const EVENT_SOURCES = [...SOURCES, 'general', 'seo-page'];
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

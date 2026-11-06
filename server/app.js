@@ -1,12 +1,27 @@
 import express from 'express';
 import { Admin, connectDb, Enquiry, LoginAttempt, Post, publicData as read, Review, sampleMode, Settings, Stat, Vehicle } from './db.js';
 import { businessDay, sinceDay, validateEvent } from './events.js';
-import { llms, renderPage, robots, sitemap } from './html.js';
+import { feed, indexNowKey, llms, renderPage, robots, sitemap } from './html.js';
 import { clearSession, hashPassword, readSession, setSession, verifyPassword } from './auth.js';
 import { dueFilter, enquiryFilter, pageParams, STATUSES, validateEnquiry, validateEnquiryUpdate, validateNote } from './enquiry.js';
 import { cloudinaryConfig, signParams } from './cloudinary.js';
 
 const app = express();
+
+// One address per page: to Google, /Fleet/ and /fleet are two pages competing with each other.
+// (Leading slashes collapse too, so //evil.example can't become a redirect to another site.)
+app.use((req, res, next) => {
+  if (!['GET', 'HEAD'].includes(req.method) || req.path.startsWith('/api/') || /\.[a-z0-9]+$/i.test(req.path)) return next();
+  const clean = `/${req.path.replace(/^\/+|\/+$/g, '')}`.toLowerCase();
+  if (clean === req.path) return next();
+  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+  res.redirect(301, clean + query);
+});
+// Basic browser protections on every response.
+app.use((req, res, next) => {
+  res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=()' });
+  next();
+});
 app.use(express.json({ limit: '200kb' }));
 // JSON isn't a page: keep API responses out of search results (Google may still fetch them to render pages).
 app.use('/api', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); });
@@ -168,7 +183,7 @@ admin.get('/insights', async (req, res) => {
     Enquiry.aggregate([{ $match: { createdAt: { $gte: fromDate } } }, { $group: { _id: '$vehicle', n: { $sum: 1 } } }]),
   ]);
   const rows = new Map(cars.map((c) => [c.slug, { slug: c.slug, name: c.name, published: c.published, whatsapp: 0, share: 0, forms: 0 }]));
-  const general = { whatsapp: 0, share: 0 };
+  const general = { whatsapp: 0, share: 0, call: 0 };
   for (const { _id, n } of byCar) {
     const row = _id.car ? rows.get(_id.car) : general;
     if (row) row[_id.kind] += n;
@@ -185,7 +200,7 @@ admin.get('/insights', async (req, res) => {
   const list = [...rows.values()].sort((a, b) => b.whatsapp + b.share + b.forms - (a.whatsapp + a.share + a.forms) || a.name.localeCompare(b.name));
   res.set('Cache-Control', 'no-store').json({
     days, from, cars: list, general,
-    totals: { whatsapp: list.reduce((s, r) => s + r.whatsapp, general.whatsapp), share: list.reduce((s, r) => s + r.share, general.share), forms: formsTotal },
+    totals: { whatsapp: list.reduce((s, r) => s + r.whatsapp, general.whatsapp), share: list.reduce((s, r) => s + r.share, general.share), call: general.call, forms: formsTotal },
     sources: Object.fromEntries(bySource.map((s) => [s._id, s.n])),
     daily: byDay.map((d) => ({ day: d._id, n: d.n })),
   });
@@ -207,6 +222,8 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 app.get('/robots.txt', robots);
 app.get('/sitemap.xml', sitemap);
 app.get('/llms.txt', llms);
+app.get('/blog/feed.xml', feed);
+app.get('/:key.txt', indexNowKey);
 app.get('/{*path}', renderPage);
 
 /* ---------- Errors ---------- */

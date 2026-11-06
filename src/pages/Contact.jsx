@@ -21,7 +21,7 @@ export default function Contact() {
               <a className="contact-card is-wa" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer">
                 <Icon name="whatsapp" size={24} /><span><strong>WhatsApp</strong>Start a chat — quickest reply</span>
               </a>
-              <a className="contact-card" href={telLink(site.phone)}>
+              <a className="contact-card" data-track="call" href={telLink(site.phone)}>
                 <Icon name="phone" size={24} /><span><strong>{site.phone}</strong>Call us</span>
               </a>
               {site.email && (

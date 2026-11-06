@@ -5,6 +5,7 @@
 export const ROUTES = [
   {
     slug: 'mumbai-to-lonavala', place: 'Lonavala', trip: 'weekend',
+    suits: 'Any well-kept car',
     distance: 'About 83 km', time: 'About 2 hours', road: 'Mumbai–Pune Expressway',
     title: 'Mumbai to Lonavala car rental: self-drive or with driver',
     h1: 'Mumbai to Lonavala car rental',
@@ -28,6 +29,7 @@ export const ROUTES = [
   },
   {
     slug: 'mumbai-to-pune', place: 'Pune', trip: 'business',
+    suits: 'A sedan, with or without a driver',
     distance: 'About 150 km', time: 'About 3 hours', road: 'Mumbai–Pune Expressway',
     title: 'Mumbai to Pune car rental: self-drive or with driver',
     h1: 'Mumbai to Pune car rental',
@@ -52,6 +54,7 @@ export const ROUTES = [
   },
   {
     slug: 'mumbai-to-nashik', place: 'Nashik', trip: 'family',
+    suits: 'A seven-seater or SUV for family trips',
     distance: 'About 170 km', time: 'About 3.5 to 4 hours', road: 'NH160, through Kasara Ghat',
     title: 'Mumbai to Nashik car rental: self-drive or with driver',
     h1: 'Mumbai to Nashik car rental',
@@ -74,7 +77,32 @@ export const ROUTES = [
     ],
   },
   {
+    slug: 'mumbai-to-shirdi', place: 'Shirdi', trip: 'family',
+    suits: 'A seven-seater or SUV',
+    distance: 'About 240 to 265 km', time: 'About 5 to 6 hours', road: 'NH160 through Kasara Ghat',
+    title: 'Mumbai to Shirdi car rental: self-drive or with driver',
+    h1: 'Mumbai to Shirdi car rental',
+    slogan: 'A long day on the road, so choose a car the elders will like.',
+    description: 'Rent a car from Mumbai to Shirdi: about 240 to 265 km and 5 to 6 hours. Good for family temple trips. Self-drive or with a driver.',
+    answer: 'Shirdi is about 240 to 265 km from Mumbai, roughly 5 to 6 hours by car on NH160 through Kasara Ghat, then through Ghoti or Nashik. Many families go for the Sai Baba temple and stay one night. A seven-seater or SUV keeps elders comfortable on the long drive.',
+    paras: [
+      'Your route depends on whether you want to stop in Nashik. The Ghoti road is shorter. Going through Nashik adds some distance but makes it easy to include Trimbakeshwar or Panchavati. Many drivers also use the Samruddhi Expressway for part of the way, so compare routes in Google Maps just before you leave.',
+      'Most people plan around darshan rather than the drive. Thursdays, weekends and festivals are usually the busiest days at the temple, so check timings with the Shirdi Sai Baba Sansthan and leave yourself extra time. If you would rather rest on the way home, a driver is worth considering.',
+    ],
+    tips: [
+      'Arrange darshan and your stay ahead of time for Thursdays, weekends and festival days.',
+      'Leaving early gets you past the morning traffic around Thane and Bhiwandi.',
+      'Carry water and snacks, since elders and children may not want to wait for a highway stop.',
+    ],
+    faqs: [
+      { q: 'How long does Mumbai to Shirdi take by car?', a: 'Usually 5 to 6 hours for the 240 to 265 km, depending on your route, traffic and where in Mumbai you start.' },
+      { q: 'Can I go from Mumbai to Shirdi and back in one day?', a: 'It is possible but tiring, with 10 hours or more on the road plus time at the temple. Most families stay one night. A driver makes a same-day return much easier.' },
+      { q: 'Which car is best for a family trip to Shirdi?', a: 'A seven-seater or SUV gives elders more room and an easier ride. Tell us how many are coming and how many bags you have, and we will suggest what fits.' },
+    ],
+  },
+  {
     slug: 'mumbai-to-alibaug', place: 'Alibaug', trip: 'weekend',
+    suits: 'A hatchback or compact SUV',
     distance: 'About 95 to 105 km', time: 'About 2.5 to 3.5 hours', road: 'Atal Setu, Chirle and Pen',
     title: 'Mumbai to Alibaug car rental: self-drive or with driver',
     h1: 'Mumbai to Alibaug car rental',
@@ -99,6 +127,7 @@ export const ROUTES = [
   },
   {
     slug: 'mumbai-to-mahabaleshwar', place: 'Mahabaleshwar', trip: 'family',
+    suits: 'An SUV or seven-seater',
     distance: 'About 260 km', time: 'About 5 to 7 hours', road: 'Expressway, then NH48 through Wai',
     title: 'Mumbai to Mahabaleshwar car rental: self-drive or driver',
     h1: 'Mumbai to Mahabaleshwar car rental',
@@ -119,6 +148,31 @@ export const ROUTES = [
       { q: 'How far is Mahabaleshwar from Mumbai by car?', a: 'About 260 km on the Expressway route. It usually takes 5 to 7 hours, with the last section a slow climb through Pasarni Ghat.' },
       { q: 'Can I do Mahabaleshwar as a day trip from Mumbai?', a: 'We would not suggest it. With up to 7 hours each way, most people stay at least one night.' },
       { q: 'Should I take a driver to Mahabaleshwar?', a: 'If you are not used to long ghat drives, or you would rather rest on the way back, a driver is worth considering. Share your dates and we will confirm the options on WhatsApp.' },
+    ],
+  },
+  {
+    slug: 'mumbai-to-goa', place: 'Goa', trip: 'weekend',
+    suits: 'An SUV or sedan, ideally with two drivers',
+    distance: 'About 580 to 610 km', time: 'About 10 to 13 hours', road: 'NH48 through Kolhapur, or NH66 along the Konkan',
+    title: 'Mumbai to Goa car rental: self-drive or with driver',
+    h1: 'Mumbai to Goa car rental',
+    slogan: 'The classic road trip, and better split over two days.',
+    description: 'Rent a car from Mumbai to Goa: about 600 km and 10 to 13 hours by NH48 or the Konkan coast. Self-drive or with a driver. Ask on WhatsApp.',
+    answer: 'Goa is about 580 to 610 km from Mumbai, roughly 10 to 13 hours by car. NH48 through Pune and Kolhapur is usually faster, while NH66 along the Konkan coast is more scenic but can be slower. Many people split the drive with a night on the way. An SUV or sedan suits it best.',
+    paras: [
+      'Choose your road before you leave. NH48 is mostly wide highway, so it is the usual choice if you want to arrive the same day. NH66 passes Chiplun and Sawantwadi, with coastal views and more small towns. Roadworks have slowed parts of it, so check recent reports before you commit to it.',
+      'A single day of driving is long for anyone, and longer with children. Stopping overnight around Kolhapur on NH48, or Chiplun or Ratnagiri on NH66, makes the trip far more pleasant. Want to fly home and end the rental in Goa? Tell us first, because a one-way drop needs to be confirmed for your dates.',
+      'During the monsoon, the ghats and the Konkan stretch can see heavy rain and the occasional landslide. Give yourself plenty of daylight and check the forecast before you set off.',
+    ],
+    tips: [
+      'Two drivers make this trip safer. Travelling alone? Ask about a car with a driver.',
+      'Both routes have tolls, so ask us about FASTag when you enquire.',
+      'Many Goan village lanes are narrow, so a very large car can be awkward to park.',
+    ],
+    faqs: [
+      { q: 'How long does it take to drive from Mumbai to Goa?', a: 'About 10 to 13 hours for 580 to 610 km, without long stops. Traffic leaving Mumbai and your choice of road make the biggest difference.' },
+      { q: 'Which is the better road to Goa, NH48 or NH66?', a: 'NH48 through Pune and Kolhapur is usually quicker. NH66 along the Konkan is more scenic but can be slower, so it suits people who are in no hurry.' },
+      { q: 'Can I leave the rental car in Goa and fly back?', a: 'Tell us your dates and we will confirm on WhatsApp whether a one-way drop in Goa is possible for that trip.' },
     ],
   },
 ];
@@ -328,6 +382,12 @@ export const CAR_TYPES = [
   },
 ];
 
+export const FIT_FAQS = [
+  { q: 'Do four people and four suitcases fit in a sedan?', a: 'Usually not. A sedan seats four adults in comfort but tends to hold two or three big suitcases. For four full-size bags, look at an SUV or a seven-seater.' },
+  { q: 'Do seven people and their luggage fit in a 7-seater?', a: 'Rarely with big suitcases. With all seven seats in use, the boot is small. Five or six people with big bags is a more comfortable load, or you can ask about two cars.' },
+  { q: 'What counts as a big bag?', a: 'Count suitcases and large holdalls. Small backpacks and handbags usually fit in the cabin, around your feet or on your lap.' },
+];
+
 // Written from what the site actually does. The client should have these reviewed before relying on them.
 const ask = (site) => [site.phone, site.email].filter(Boolean).join(' or ');
 export const LEGAL = {
@@ -344,7 +404,8 @@ export const LEGAL = {
       { h: 'Why we use it', p: ['We use your details to reply to you, suggest a car and arrange your trip. Our team may keep notes on your enquiry so that whoever replies knows what has been discussed.'] },
       { h: 'Anonymous counters', p: ['We count how often buttons such as WhatsApp and Share are used, for each day, car and part of the site. These counts contain no name, phone number, IP address or message text, and they can’t identify you.'] },
       { h: 'What stays on your device', p: ['My Garage and Compare keep your chosen cars in your own browser, and we can’t see them. Your browser also remembers that a button has already been counted during your visit. You can clear all of this in your browser settings. We don’t use advertising cookies. Staff who sign in to the admin area get a sign-in cookie, and visitors don’t need one.'] },
-      { h: 'Who else is involved', p: ['Like most websites, this one uses outside services to run: website hosting and a database to store enquiries, image hosting for photos, and Google Fonts for its lettering. These providers may see basic technical information such as your IP address when your browser loads the page. WhatsApp handles the chats you start with us.'] },
+      { h: 'Visitor statistics', p: ['We may use Google Analytics to see which pages bring enquiries. When it is switched on, it sets analytics cookies, and Google processes technical details such as your IP address. We don’t use it to identify you.'] },
+      { h: 'Who else is involved', p: ['Like most websites, this one uses outside services to run: website hosting, a database to store enquiries, and image hosting for photos. These providers may see basic technical information such as your IP address when your browser loads the page. WhatsApp handles the chats you start with us.'] },
       { h: 'How long we keep it, and your choices', p: [`We keep enquiries for as long as we need them to look after you and keep proper records. To ask what we hold about you, or to have it corrected or deleted, contact us on ${ask(site)}.`] },
     ],
   },

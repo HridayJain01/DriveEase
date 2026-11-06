@@ -9,8 +9,10 @@ const ROUTES = [
   { slug: 'mumbai-to-lonavala', place: 'Lonavala' },
   { slug: 'mumbai-to-pune', place: 'Pune' },
   { slug: 'mumbai-to-nashik', place: 'Nashik' },
+  { slug: 'mumbai-to-shirdi', place: 'Shirdi' },
   { slug: 'mumbai-to-alibaug', place: 'Alibaug' },
   { slug: 'mumbai-to-mahabaleshwar', place: 'Mahabaleshwar' },
+  { slug: 'mumbai-to-goa', place: 'Goa' },
 ];
 
 const AREAS = [

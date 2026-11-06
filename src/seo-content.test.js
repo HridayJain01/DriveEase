@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { landingMeta } from './seo.js';
-import { AREAS, CAR_TYPES, LEGAL, ROUTES } from './seo-content.js';
+import { carsThatFit } from './concierge/match.js';
+import { AREAS, CAR_TYPES, FIT_FAQS, LEGAL, ROUTES } from './seo-content.js';
 import { areaLinks, carsOfType, routeLinks, typeLinks } from './seo-links.js';
 
 const site = { businessName: 'Drive Ease', city: 'Mumbai', phone: '+91 88797 90490', email: 'hello@example.test', serviceAreas: AREAS.map((a) => a.name) };
@@ -41,7 +42,7 @@ test('each page says something of its own: enough text, and no paragraph or ques
 });
 
 test('nothing promises a price, a discount or that a car is free', () => {
-  const copy = JSON.stringify(pages) + Object.values(LEGAL).map((d) => JSON.stringify(d.sections(site))).join('');
+  const copy = JSON.stringify(pages) + JSON.stringify(FIT_FAQS) + Object.values(LEGAL).map((d) => JSON.stringify(d.sections(site))).join('');
   assert.doesNotMatch(copy, /₹|\bRs\.?\s?\d|\bper (day|km)\b|\/day|\/km|\bdiscount|\bcheapest\b|\bguaranteed?\b|\bfree cancellation\b|\bverified\b/i);
 });
 
@@ -51,6 +52,14 @@ test('route pages say that distances are estimates, using ranges or "about"', ()
     assert.match(r.time, /^About /, r.slug);
     assert.ok(r.answer.includes('Mumbai') && r.answer.includes(r.place), r.slug);
   }
+});
+
+test('which car fits: enough seats and bags, tightest fit first, blanks never assumed', () => {
+  const cars = [{ slug: 'big', seats: 7, bags: 5 }, { slug: 'small', seats: 5, bags: 2 }, { slug: 'mid', seats: 5, bags: 3 }, { slug: 'blank', seats: '', bags: '' }, { slug: 'nobags' , seats: 5 }];
+  assert.deepEqual(carsThatFit(cars, 4, 2).map((v) => v.slug), ['small', 'mid', 'big']);
+  assert.deepEqual(carsThatFit(cars, 7, 0).map((v) => v.slug), ['big']);
+  assert.deepEqual(carsThatFit(cars, 8, 0), []);
+  assert.deepEqual(carsThatFit(undefined, 1, 0), []);
 });
 
 test('the text only goes live where it is true', () => {

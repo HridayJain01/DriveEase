@@ -1,64 +1,32 @@
-import { lazy, StrictMode, Suspense } from 'react';
-import { createRoot } from 'react-dom/client';
+import { startTransition, StrictMode, useEffect } from 'react';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
-import { Layout, RouteError } from './components.jsx';
-import { fetchJson } from './lib.js';
-import Home from './pages/Home.jsx';
-import About from './pages/About.jsx';
-import Services from './pages/Services.jsx';
-import Fleet from './pages/Fleet.jsx';
-import Vehicle from './pages/Vehicle.jsx';
-import Blog from './pages/Blog.jsx';
-import Contact from './pages/Contact.jsx';
-import NotFound from './pages/NotFound.jsx';
 import './styles.css';
+import { handOverEarlyActions } from './early.js';
+import { preloadRoute, routes } from './routes.jsx';
 
-const Admin = lazy(() => import('./admin/Admin.jsx')); // separate chunk: visitors never download the admin
-const Post = lazy(() => import('./pages/Post.jsx')); // keeps the Markdown renderer out of the main bundle
-const Concierge = lazy(() => import('./pages/Concierge.jsx'));
-const Compare = lazy(() => import('./pages/Compare.jsx'));
-const Garage = lazy(() => import('./pages/Garage.jsx'));
-const Service = lazy(() => import('./pages/Service.jsx'));
-const Landing = lazy(() => import('./pages/Landing.jsx')); // its text stays out of the main bundle
-// Padding, not margin: a margin here collapses through <body>, so the whole page jumps when the real page replaces this.
-const Loading = () => <div style={{ minHeight: '100vh', paddingTop: 120 }} aria-busy="true"><div className="wrap skeleton" style={{ height: '60vh' }} /></div>;
-const page = (el) => <Suspense fallback={<Loading />}>{el}</Suspense>;
+const router = createBrowserRouter(routes);
+// The app shell is live: from now on buttons work directly. The page content normally hands over a moment later
+// (Layout in components.jsx); the timer covers screens without it, such as the admin or an error page.
+function Live() {
+  useEffect(() => {
+    window.__live = true;
+    const t = setTimeout(handOverEarlyActions, 6000);
+    return () => clearTimeout(t);
+  }, []);
+  return null;
+}
+const app = <StrictMode><RouterProvider router={router} /><Live /></StrictMode>;
+const root = document.getElementById('root');
 
-// Warm the cache for data almost every page needs.
-['/api/site', '/api/vehicles'].forEach((u) => fetchJson(u).catch(() => {}));
-
-const router = createBrowserRouter([
-  { path: '/admin/*', element: <Suspense fallback={null}><Admin /></Suspense>, errorElement: <RouteError /> },
-  {
-    element: <Layout />,
-    errorElement: <RouteError />,
-    children: [
-      { path: '/', element: <Home /> },
-      { path: '/about', element: <About /> },
-      { path: '/services', element: <Services /> },
-      { path: '/services/:slug', element: page(<Service />) },
-      { path: '/routes', element: page(<Landing kind="routes" />) },
-      { path: '/routes/:slug', element: page(<Landing kind="route" />) },
-      { path: '/car-rental', element: page(<Landing kind="areas" />) },
-      { path: '/car-rental/:slug', element: page(<Landing kind="area" />) },
-      { path: '/cars/:slug', element: page(<Landing kind="type" />) },
-      { path: '/privacy', element: page(<Landing kind="/privacy" />) },
-      { path: '/terms', element: page(<Landing kind="/terms" />) },
-      { path: '/fleet', element: <Fleet /> },
-      { path: '/fleet/:slug', element: <Vehicle /> },
-      { path: '/blog', element: <Blog /> },
-      { path: '/blog/:slug', element: page(<Post />) },
-      { path: '/contact', element: <Contact /> },
-      { path: '/concierge', element: page(<Concierge />) },
-      { path: '/compare', element: page(<Compare />) },
-      { path: '/garage', element: page(<Garage />) },
-      { path: '*', element: <NotFound /> },
-    ],
-  },
-]);
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-);
+// Most pages arrive already drawn by the server, so React takes over that HTML instead of redrawing it.
+// Personal pages (My Garage, Compare, admin) and `npm run dev` arrive empty and are drawn here.
+// It waits for the first paint, and a transition splits the work into small slices, so a slow phone stays responsive.
+const start = () => {
+  if (root.hasChildNodes()) startTransition(() => { hydrateRoot(root, app); });
+  else createRoot(root).render(app);
+};
+preloadRoute(location.pathname).catch(() => {}).finally(() => {
+  if (document.hidden) start();
+  else requestAnimationFrame(() => setTimeout(start));
+});

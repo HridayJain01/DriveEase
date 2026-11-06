@@ -74,7 +74,7 @@ Add only **genuine** reviews from real customers who have agreed to be quoted. T
 
 ## Getting found on Google
 
-The website is set up for Google: titles, headings, a page per service, route, area and car type, structured data, a sitemap and text that search engines and AI tools can read without running JavaScript. `docs/seo-plan.md` shows which page targets which search. What moves a local car rental up the results is mostly done outside the website, and only you can do it:
+The website is set up for Google: titles, headings, a page per service, route, area and car type, structured data, a sitemap and text that search engines and AI tools can read without running JavaScript. `docs/seo-plan.md` shows which page targets which search, and `docs/launch-kit.md` has ready-to-paste text for your Google profile, listings and review requests. What moves a local car rental up the results is mostly done outside the website, and only you can do it:
 
 1. **Site details → City** and **Areas you serve.** Every page title and heading uses the city ("Car rental in Mumbai"), so it must be right. **Check the areas now:** Mumbai Airport, Andheri, Bandra, Dadar, Powai, Borivali and South Mumbai were added as a first list. Remove any you don't serve, and its page comes off the website. A new area shows on the home page, but its own page has to be written first.
 2. **Google Business Profile** (business.google.com): create or claim it with *exactly* the same business name, address and phone number as the website. Pick the category "Car rental agency", add your hours, the website address, and real photos of your cars and office. This is what puts you in the map results.

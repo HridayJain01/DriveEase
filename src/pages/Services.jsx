@@ -1,8 +1,7 @@
 import { Link } from 'react-router';
-import { ErrorState, Icon, PageHead, Seo } from '../components.jsx';
+import { CtaBand, ErrorState, Icon, PageHead, Seo } from '../components.jsx';
 import { useApi, waLink } from '../lib.js';
 import { pageMeta } from '../seo.js';
-import { CtaBand } from './Home.jsx';
 
 export default function Services() {
   const { data: site, error } = useApi('/api/site');

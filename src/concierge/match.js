@@ -140,6 +140,11 @@ export function recommend(vehicles = [], a) {
   return { top: matches.slice(0, 3), more: matches.slice(3), alternatives, total: vehicles.length };
 }
 
+// Cars with enough seats and big-bag space, tightest fit first. A car with a blank spec isn't assumed to fit.
+export const carsThatFit = (vehicles = [], people = 1, bags = 0) => vehicles
+  .filter((v) => Number(v.seats) >= people && Number(v.bags) >= bags)
+  .sort((a, b) => Number(a.seats) + Number(a.bags) - (Number(b.seats) + Number(b.bags)));
+
 // Which Concierge trip a service is closest to, so its page can suggest suitable cars.
 export const tripForService = (slug) => (/airport/.test(slug) ? 'airport' : /outstation|trip|tour/.test(slug) ? 'weekend' : /wedding|event|family/.test(slug) ? 'family' : /corporate|business/.test(slug) ? 'business' : '');
 

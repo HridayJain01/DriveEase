@@ -59,6 +59,11 @@ export function pageMeta(path, site) {
       h1: `Car rental by area${c}`,
       description: `The parts of ${cityOf(site) || 'the city'} we cover, with what suits each one: from airport pickups to a day of meetings. Self-drive or with a driver.`,
     },
+    '/which-car-fits': {
+      title: 'Which rental car fits your group and bags?',
+      h1: 'Which car fits your group and bags?',
+      description: `Enter how many people and big bags you have, and see which ${b} cars fit, with seats and boot space for every car${c}. Free, with no sign-up.`,
+    },
     // Personal, device-specific pages: kept out of search results.
     '/compare': { title: 'Compare cars', description: `Compare up to three ${b} cars side by side: seats, luggage, gearbox and fuel.`, noindex: true },
     '/garage': { title: 'My Garage', description: `Cars you saved from the ${b} fleet.`, noindex: true },

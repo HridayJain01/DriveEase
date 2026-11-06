@@ -1,7 +1,6 @@
-import { ErrorState, PageHead, Photo, Seo } from '../components.jsx';
+import { CtaBand, ErrorState, PageHead, Photo, Seo } from '../components.jsx';
 import { useApi } from '../lib.js';
 import { pageMeta } from '../seo.js';
-import { CtaBand } from './Home.jsx';
 
 export default function About() {
   const { data: site, error } = useApi('/api/site');

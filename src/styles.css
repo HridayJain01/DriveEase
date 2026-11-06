@@ -1,6 +1,10 @@
 /* Drive Ease — night-drive design system, phone first.
    Graphite + one headlight-amber accent. Display: Archivo Expanded (automotive badging).
-   Body: Geist. Data/readouts: Geist Mono. Motion: GSAP (src/motion.jsx). */
+   Body: Geist. Data/readouts: Geist Mono. Motion: CSS, plus GSAP once someone scrolls (src/motion.jsx). */
+/* Hosted with the site and trimmed to what it uses (src/fonts/LICENSES.txt). */
+@font-face { font-family: 'Archivo'; src: url('./fonts/archivo.woff2') format('woff2'); font-weight: 500 800; font-stretch: 100% 125%; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url('./fonts/geist.woff2') format('woff2'); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url('./fonts/geist-mono.woff2') format('woff2'); font-weight: 400 500; font-display: swap; }
 /* Everyday fonts sized to match the web fonts (measured against Arial), so text doesn't jump when they arrive. */
 @font-face { font-family: 'Archivo Fallback'; src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Neue Bold'), local('Roboto Bold'), local('Arial'); font-weight: 500 800; size-adjust: 126%; }
 @font-face { font-family: 'Geist Fallback'; src: local('Arial'), local('Helvetica Neue'), local('Roboto'); font-weight: 400 600; size-adjust: 102%; }
@@ -102,7 +106,6 @@ p { text-wrap: pretty; }
 .stretch::after { content: ''; position: absolute; inset: 0; z-index: 1; }
 .lift { position: relative; z-index: 2; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
-.line { padding-bottom: .06em; } /* SplitText line masks: keep descenders */
 
 .eyebrow { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font: 500 .72rem var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 .eyebrow::before { content: ''; width: 18px; height: 1px; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
@@ -885,6 +888,22 @@ html:has(dialog[open]) { overflow: hidden; } /* the page behind a sheet stays st
 .hub-card p { margin: 0; color: var(--muted); font-size: .95rem; }
 .hub-card .mono { font-size: .76rem; color: var(--accent-text); }
 .type-links { margin-top: 44px; }
+.route-table { padding-block: 16px 56px; }
+.read-next { padding-block: 40px 16px; }
+.read-next ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.form-more { display: grid; gap: 14px; }
+.form-more summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 10px 0; cursor: pointer; list-style: none; font-weight: 500; }
+.form-more summary::-webkit-details-marker { display: none; }
+.form-more[open] summary { margin-bottom: 14px; }
+.form-more[open] summary svg { transform: rotate(180deg); }
+.form-more > :not(summary) + :not(summary) { margin-top: 14px; }
+.form-note { margin: 2px 0 0; font-size: .84rem; color: var(--muted); }
+.fit-tool { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 20px; border-radius: 24px; border: 1px solid var(--line-2); background: var(--card-bg); margin-bottom: 28px; }
+.fit-inputs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 700px) { .fit-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fit-answer { margin: 0; font-weight: 500; }
+.fit-count { flex: 1; text-align: center; font: 600 1.2rem var(--font-body); }
+.fit-table { margin-top: 12px; }
 .footer .label a { color: inherit; }
 .link-arrow.wraps { white-space: normal; } /* long titles must not push the page wider than a phone */
 .landing-faq { max-width: 760px; }
@@ -894,13 +913,19 @@ html:has(dialog[open]) { overflow: hidden; } /* the page behind a sheet stays st
 .prose th, .prose td { padding: 10px 8px; border-bottom: 1px solid var(--line-2); text-align: left; vertical-align: top; }
 .prose th { font: 500 .72rem var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 
-/* What readers without JavaScript see (server/prerender.js). index.html hides it from everyone else. */
-.ssr { width: min(100% - 32px, 760px); margin-inline: auto; padding-block: 24px 48px; line-height: 1.6; }
-.ssr nav { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 24px; }
-.ssr h1 { font-size: 2rem; margin: 0 0 12px; }
-.ssr h2 { font-size: 1.3rem; margin: 28px 0 8px; }
-.ssr h3 { font-size: 1.05rem; margin: 16px 0 4px; }
-.ssr footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+/* Scroll reveal (src/motion.jsx). Only hidden when JavaScript can show it again and motion is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal:not([data-each]), .js .reveal[data-each] > * { opacity: 0; translate: 0 28px; transition: opacity .9s var(--ease), translate .9s var(--ease); transition-delay: calc(var(--i, 0) * 80ms); }
+  .js .reveal.in:not([data-each]), .js .reveal.in[data-each] > * { opacity: 1; translate: none; }
+}
+/* Off-screen sections skip layout and painting until they come near the screen, which saves a slow phone a lot of
+   work. The clip margin keeps card shadows and edge-to-edge rails from being cut, so browsers without it opt out.
+   The concierge band stays out: it sits above the pinned story, whose start position depends on its real height. */
+@supports (overflow-clip-margin: 80px) {
+  .section:not(.concierge-band), .cta, .footer { content-visibility: auto; contain-intrinsic-size: auto 720px; overflow-clip-margin: 80px; }
+}
+/* The light sweep repaints the whole photo on every frame: too much work for a phone. */
+@media (max-width: 700px) { .hero-beam { display: none; } }
 
 /* QR code (computers), review button */
 .qr-card { display: flex; align-items: center; gap: 16px; padding: 14px; border-radius: 18px; border: 1px dashed var(--line-2); background: var(--fill); }

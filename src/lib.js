@@ -16,15 +16,27 @@ export function fetchJson(url) {
   return inflight.get(url);
 }
 
+// The server fills this in just before drawing a page (src/entry-server.jsx).
+export function seedData(data) { settled.clear(); Object.entries(data).forEach(([url, value]) => settled.set(url, value)); }
+
 // Called after admin edits so the public pages refetch fresh content.
 export function clearCache() { settled.clear(); inflight.clear(); }
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const whenIdle = (fn) => (globalThis.requestIdleCallback ? requestIdleCallback(fn, { timeout: 4000 }) : setTimeout(fn, 2000));
 
 export function useApi(url) {
   const [state, setState] = useState(() => ({ data: settled.get(url) }));
   useEffect(() => {
     let live = true;
-    setState({ data: settled.get(url) });
-    fetchJson(url).then((data) => live && setState({ data }), (error) => live && setState({ error }));
+    const known = settled.get(url);
+    setState((s) => (s.data === known && !s.error ? s : { data: known }));
+    const refresh = () => fetchJson(url).then(
+      (data) => live && setState((s) => (same(s.data, data) ? s : { data })), // unchanged data must not redraw the page
+      (error) => live && setState((s) => (s.data ? s : { error })), // keep showing what we have
+    );
+    // Data sent with the page is already on screen, so checking for something newer can wait until the browser is idle.
+    if (known) whenIdle(refresh); else refresh();
     return () => { live = false; };
   }, [url]);
   return state;

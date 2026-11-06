@@ -178,7 +178,7 @@ test('robots, sitemap and structured data help Google find and understand every 
   assert.match(page, /<meta name="google-site-verification" content="abc123_XYZ" \/>/);
   const ld = JSON.parse(page.match(/<script type="application\/ld\+json">(.*?)<\/script>/)[1]);
   const types = ld['@graph'].map((x) => x['@type']);
-  assert.deepEqual(types, ['AutoRental', 'BreadcrumbList', 'Car']);
+  assert.deepEqual(types, ['AutoRental', 'WebSite', 'WebPage', 'BreadcrumbList', 'Car']);
   assert.deepEqual(ld['@graph'][0].areaServed.map((a) => a.name), ['Pune', 'Baner', 'Pune Airport']);
   const home = await fetch(`${base}/`).then((r) => r.text());
   assert.match(home, /"@type":"FAQPage"/);
@@ -187,9 +187,10 @@ test('robots, sitemap and structured data help Google find and understand every 
   assert.match(service, /"@type":"Service"/);
 });
 
-test('Mumbai pages publish plain text, matching data and an AI summary, only where they are true', async () => {
+test('Mumbai pages arrive fully drawn, with matching data and an AI summary, only where they are true', async () => {
   const get = async (p) => { const r = await fetch(`${base}${p}`); return { status: r.status, html: await r.text() }; };
-  if ((await get('/')).status === 503) { console.log('# shell not built: page checks skipped'); return; }
+  const first = await get('/');
+  if (first.status === 503 || /<div id="root"><\/div>/.test(first.html)) { console.log('# site not built: page checks skipped'); return; }
   const typesOf = (html) => JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)[1])['@graph'].map((x) => x['@type']);
 
   // Set to Pune, the Mumbai text stays unpublished.
@@ -201,18 +202,21 @@ test('Mumbai pages publish plain text, matching data and an AI summary, only whe
     const route = await get('/routes/mumbai-to-lonavala');
     assert.equal(route.status, 200);
     assert.match(route.html, /<title>Mumbai to Lonavala car rental: self-drive or with driver \| Drive Ease<\/title>/);
-    assert.match(route.html, /<div id="root"><div class="ssr">/);
-    assert.match(route.html, /<h1>Mumbai to Lonavala car rental<\/h1>/);
+    assert.match(route.html, /<h1[^>]*>Mumbai to Lonavala car rental<\/h1>/);
+    assert.equal(route.html.match(/<h1/g).length, 1);
     assert.match(route.html, /Lonavala is about 83 km from Mumbai/);
     assert.match(route.html, /How long is the drive from Mumbai to Lonavala\?/);
     assert.match(route.html, /href="\/fleet\/hyundai-creta"/);
     assert.match(route.html, /wa\.me\/918879790490\?text=[^"]*Lonavala/);
-    assert.deepEqual(typesOf(route.html), ['AutoRental', 'BreadcrumbList', 'Service', 'FAQPage']);
+    assert.deepEqual(typesOf(route.html), ['AutoRental', 'WebSite', 'WebPage', 'BreadcrumbList', 'Service', 'FAQPage']);
+    assert.match(route.html, /"dateModified":"\d{4}-\d{2}-\d{2}"/);
+    assert.match(route.html, /<link rel="modulepreload" href="\/assets\/Landing-/);
+    assert.doesNotMatch(route.html, /<!--pages:/);
 
     const area = await get('/car-rental/andheri');
     assert.equal(area.status, 200);
-    assert.match(area.html, /<h1>Car rental in Andheri<\/h1>/);
-    assert.deepEqual(typesOf(area.html), ['AutoRental', 'BreadcrumbList', 'Service', 'FAQPage']);
+    assert.match(area.html, /<h1[^>]*>Car rental in Andheri<\/h1>/);
+    assert.deepEqual(typesOf(area.html), ['AutoRental', 'WebSite', 'WebPage', 'BreadcrumbList', 'Service', 'FAQPage']);
     assert.equal((await get('/car-rental/bandra')).status, 404); // not listed in Site details
     assert.equal((await get('/routes/mumbai-to-nowhere')).status, 404);
 
@@ -222,7 +226,7 @@ test('Mumbai pages publish plain text, matching data and an AI summary, only whe
     assert.equal((await get('/car-rental')).status, 200);
 
     assert.equal((await get('/cars/suv')).status, 200);
-    assert.deepEqual(typesOf((await get('/cars/suv')).html), ['AutoRental', 'BreadcrumbList', 'ItemList', 'FAQPage']);
+    assert.deepEqual(typesOf((await get('/cars/suv')).html), ['AutoRental', 'WebSite', 'WebPage', 'BreadcrumbList', 'ItemList', 'FAQPage']);
     assert.equal((await get('/cars/sedan')).status, 404); // no sedan in this test fleet
 
     for (const p of ['/privacy', '/terms']) {
@@ -231,11 +235,12 @@ test('Mumbai pages publish plain text, matching data and an AI summary, only whe
       assert.match(legal.html, /<link rel="canonical"/, p);
     }
 
-    for (const [p, text] of [['/', /Car rental in Mumbai/], ['/fleet', /Hyundai Creta/], ['/fleet/hyundai-creta', /Hyundai Creta/], ['/services', /Airport transfers/], ['/services/airport-transfers', /We meet you at arrivals/], ['/about', /About Drive Ease/], ['/contact', /\+91 88797 90490/], ['/concierge', /four quick questions/]]) {
+    for (const [p, text] of [['/', /Car rental in Mumbai/], ['/fleet', /Hyundai Creta/], ['/fleet/hyundai-creta', /Hyundai Creta/], ['/services', /Airport transfers/], ['/services/airport-transfers', /We meet you at arrivals/], ['/about', /About Drive Ease/], ['/contact', /\+91 88797 90490/], ['/concierge', /Four questions/]]) {
       const { html } = await get(p);
-      assert.match(html.match(/<div class="ssr">[\s\S]*<\/div><\/div>/)?.[0] || '', text, `${p} should have text without JavaScript`);
+      assert.match(html.slice(html.indexOf('<div id="root">')), text, `${p} should have its text before JavaScript runs`);
+      assert.equal((html.match(/<h1/g) || []).length, 1, `${p} should have one main heading`);
     }
-    assert.doesNotMatch((await get('/compare')).html, /class="ssr"/); // personal pages stay out of search
+    assert.match((await get('/compare')).html, /<div id="root"><\/div>/); // personal pages are drawn in the browser, and stay out of search
 
     const missing = await get('/no-such-page');
     assert.equal(missing.status, 404);
@@ -252,6 +257,19 @@ test('Mumbai pages publish plain text, matching data and an AI summary, only whe
     assert.match(summary.html, /no prices/);
     assert.match(summary.html, /\/routes\/mumbai-to-lonavala\): About 83 km/);
 
+    const tool = await get('/which-car-fits');
+    assert.equal(tool.status, 200);
+    assert.match(tool.html, /Seats and bags in every car/);
+    assert.match(first.html, /<form class="composer"[^>]* action="\/contact"/); // works before the app loads, or without JavaScript
+    assert.deepEqual(typesOf(tool.html), ['AutoRental', 'WebSite', 'WebPage', 'BreadcrumbList', 'ItemList', 'FAQPage']);
+
+    const rss = await get('/blog/feed.xml');
+    assert.equal(rss.status, 200);
+    assert.match(rss.html, /<rss version="2.0"/);
+    assert.match(first.html, /type="application\/rss\+xml"/);
+    assert.match(map, /xmlns:image="http:\/\/www\.google\.com\/schemas\/sitemap-image\/1\.1"/);
+    assert.match(map, /\/which-car-fits</);
+
     // Taps from these pages count separately in Insights.
     const tap = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ kind: 'whatsapp', source: 'seo-page' }) });
     assert.equal(tap.status, 204);
@@ -263,13 +281,66 @@ test('Mumbai pages publish plain text, matching data and an AI summary, only whe
     process.env.GOOGLE_SITE_VERIFICATION = 'from-env';
     const fleet = (await get('/fleet')).html;
     assert.ok(fleet.includes('&lt;script&gt;alert(1)&lt;/script&gt; $&amp; fast'));
-    assert.doesNotMatch(fleet.match(/<div class="ssr">[\s\S]*<\/div><\/div>/)[0], /<script>/);
+    assert.doesNotMatch(fleet.slice(fleet.indexOf('<div id="root">')), /<script>/);
     assert.match(fleet, /<meta name="google-site-verification" content="from-env" \/>/);
   } finally {
     delete process.env.GOOGLE_SITE_VERIFICATION;
     await db.Vehicle.updateOne({ name: 'Hyundai Creta' }, { $set: { summary: '' } });
     await db.Settings.updateOne({ key: 'site' }, { $set: { city: 'Pune', serviceAreas: ['Baner', 'Pune Airport'], googleSiteVerification: 'abc123_XYZ' } });
   }
+});
+
+test('every page has one address, and only the real address is offered to search engines', async () => {
+  const get = (p, headers) => fetch(`${base}${p}`, { redirect: 'manual', headers });
+  for (const [from, to] of [['/fleet/', '/fleet'], ['/Fleet', '/fleet'], ['/FLEET/?type=SUV', '/fleet?type=SUV'], ['//evil.example/', '/evil.example']]) {
+    const r = await get(from);
+    assert.equal(r.status, 301, from);
+    assert.equal(r.headers.get('location'), to, from); // never to another site
+  }
+  assert.equal((await get('/fleet')).status === 301, false);
+  assert.equal((await get('/api/vehicles/')).status === 301, false); // the API is left alone
+  assert.notEqual((await get('/assets/Index-ABC.js')).status, 301); // file names are case-sensitive
+
+  const page = await get('/fleet');
+  assert.equal(page.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(page.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
+  assert.equal(page.headers.get('x-robots-tag'), null);
+
+  process.env.SITE_URL = 'https://www.example.in';
+  try {
+    const preview = await get('/fleet', { 'x-forwarded-host': 'drive-ease-abc123.vercel.app' });
+    assert.equal(preview.headers.get('x-robots-tag'), 'noindex');
+    assert.equal(preview.headers.get('cache-control'), 'no-store'); // a cached noindex could reach the real address
+    const real = await get('/fleet', { 'x-forwarded-host': 'www.example.in' });
+    assert.equal(real.headers.get('x-robots-tag'), null);
+    assert.match(real.headers.get('cache-control'), /s-maxage/);
+  } finally {
+    delete process.env.SITE_URL;
+  }
+});
+
+test('IndexNow only sees the key when one is set, and call taps are counted', async () => {
+  assert.notEqual((await fetch(`${base}/abc123.txt`)).status === 200 && (await (await fetch(`${base}/abc123.txt`)).text()) === 'abc123', true);
+  process.env.INDEXNOW_KEY = 'abc123';
+  try {
+    assert.equal(await (await fetch(`${base}/abc123.txt`)).text(), 'abc123');
+  } finally {
+    delete process.env.INDEXNOW_KEY;
+  }
+  const tap = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ kind: 'call' }) });
+  assert.equal(tap.status, 204);
+  const r = await call('GET', '/api/admin/insights?days=7', null, await signIn());
+  assert.equal(r.body.totals.call, 1);
+});
+
+test('opening hours become Google data only when they can be read for certain', async () => {
+  const { openingHours } = await import('./html.js');
+  const h = openingHours('Open daily, 7 am – 11 pm');
+  assert.deepEqual([h.opens, h.closes, h.dayOfWeek.length], ['07:00', '23:00', 7]);
+  assert.deepEqual([openingHours('Daily 12 pm - 9:30 pm').opens, openingHours('Daily 12 pm - 9:30 pm').closes], ['12:00', '21:30']);
+  assert.equal(openingHours('Daily 12 am - 12 pm').opens, '00:00');
+  assert.equal(openingHours('Mon to Sat, call us'), undefined);
+  assert.equal(openingHours(''), undefined);
 });
 
 test('sample-content mode needs an explicit switch and never saves or shows placeholders', async () => {

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { CardSkeletons, GoogleReviewLink, Icon, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
+import { CardSkeletons, CtaBand, GoogleReviewLink, Icon, ReviewList, Seo, TripComposer, VehicleCard } from '../components.jsx';
 import { formatDate, heroSrcSet, img, telLink, tripMessage, useApi, waLink } from '../lib.js';
-import { calm, Count, gsap, Reveal, ScrollTrigger, useGSAP, useSplitReveal } from '../motion.jsx';
+import { calm, refreshScroll, Reveal, useScrollEffect } from '../motion.jsx';
 import { TRIPS } from '../concierge/match.js';
 import { pageMeta } from '../seo.js';
 import { areaLinks, routeLinks } from '../seo-links.js';
@@ -12,7 +12,7 @@ export default function Home() {
   const { data: vehicles } = useApi('/api/vehicles');
   const lead = vehicles?.find((v) => v.featured) || vehicles?.[0];
 
-  useEffect(() => { ScrollTrigger.refresh(); }, [site, vehicles]); // content above the story changed height
+  useEffect(() => { refreshScroll(); }, [site, vehicles]); // content above the story changed height
 
   return (
     <>
@@ -54,39 +54,36 @@ export default function Home() {
 }
 
 /* ---------- Hero ---------- */
+const pad = (n) => String(n).padStart(2, '0');
+
 function Hero({ site, vehicles, lead }) {
   const root = useRef();
-  const title = useRef();
-  useSplitReveal(title);
-  useGSAP(() => {
-    if (calm()) return;
-    gsap.from('.hero-car', { scale: 1.15, duration: 2.2, ease: 'expo.out' }); // no fade: it's the largest paint
-    gsap.from('.hero-rise', { y: 24, opacity: 0, duration: 1, ease: 'expo.out', stagger: 0.08, delay: 0.45 });
+  useScrollEffect((gsap) => {
     gsap.to('.hero-car', { yPercent: 14, scale: 1.06, ease: 'none', scrollTrigger: { trigger: root.current, start: 'top top', end: 'bottom top', scrub: true } });
-  }, { scope: root, dependencies: [!!lead], revertOnUpdate: true });
+  }, root);
 
   return (
     <section className="hero" ref={root}>
       <div className="hero-visual" aria-hidden="true">
-        {lead && <img className="hero-car" src={img(lead.images?.[0], 1000)} srcSet={heroSrcSet(lead.images?.[0])} sizes="100vw" alt="" fetchPriority="high" />}
+        {lead && <img className="hero-car" src={img(lead.images?.[0], 1000)} srcSet={heroSrcSet(lead.images?.[0])} sizes="100vw" alt="" fetchPriority="low" />}
         <span className="hero-beam" />
       </div>
       <div className="wrap hero-inner">
-        <h1 className="hero-rise status"><i aria-hidden="true" />{pageMeta('/', site).h1}</h1>
-        <p ref={title} className="hero-title">Tell us the trip. <em>We’ll sort the car.</em></p>
-        <div className="hero-rise hero-form"><TripComposer site={site} vehicles={vehicles} /></div>
-        <p className="hero-rise hero-links">
+        <h1 className="status"><i aria-hidden="true" />{pageMeta('/', site).h1}</h1>
+        <p className="hero-title">Tell us the trip. <em>We’ll sort the car.</em></p>
+        <div className="hero-form"><TripComposer site={site} vehicles={vehicles} /></div>
+        <p className="hero-links">
           <Link className="link-arrow hero-concierge" to="/concierge"><Icon name="spark" size={16} />Not sure which car? Ask the Concierge</Link>
           <Link className="link-arrow hero-fleet" to="/fleet">Browse all {vehicles?.length || ''} cars<Icon name="arrow" size={16} /></Link>
         </p>
         {vehicles?.length > 0 && (
-          <dl className="hero-rise readouts">
-            <div><dt>Cars</dt><dd><Count to={vehicles.length} pad={2} /></dd></div>
-            <div><dt>Seats, max</dt><dd><Count to={Math.max(0, ...vehicles.map((v) => Number(v.seats) || 0))} pad={2} /></dd></div>
-            <div><dt>Car types</dt><dd><Count to={new Set(vehicles.map((v) => v.category).filter(Boolean)).size} pad={2} /></dd></div>
+          <dl className="readouts">
+            <div><dt>Cars</dt><dd>{pad(vehicles.length)}</dd></div>
+            <div><dt>Seats, max</dt><dd>{pad(Math.max(0, ...vehicles.map((v) => Number(v.seats) || 0)))}</dd></div>
+            <div><dt>Car types</dt><dd>{pad(new Set(vehicles.map((v) => v.category).filter(Boolean)).size)}</dd></div>
           </dl>
         )}
-        <a className="hero-rise scroll-cue" href="#story">Scroll to see how it works<Icon name="down" size={16} /></a>
+        <a className="scroll-cue" href="#story">Scroll to see how it works<Icon name="down" size={16} /></a>
       </div>
     </section>
   );
@@ -158,22 +155,19 @@ function Story({ site, car }) {
   const trigger = useRef();
   const [step, setStep] = useState(0);
 
-  useGSAP(() => {
-    const mm = gsap.matchMedia();
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      trigger.current = ScrollTrigger.create({
-        trigger: root.current,
-        start: 'top top',
-        end: () => `+=${innerHeight * 3}`,
-        pin: '.story-stage',
-        onUpdate: (self) => {
-          setStep(Math.min(3, Math.floor(self.progress * 4)));
-          gsap.set('.story-bar i', { scaleX: self.progress });
-        },
-      });
-      return () => { trigger.current = null; };
+  useScrollEffect((gsap, ScrollTrigger) => {
+    trigger.current = ScrollTrigger.create({
+      trigger: root.current,
+      start: 'top top',
+      end: () => `+=${innerHeight * 3}`,
+      pin: '.story-stage',
+      onUpdate: (self) => {
+        setStep(Math.min(3, Math.floor(self.progress * 4)));
+        gsap.set('.story-bar i', { scaleX: self.progress });
+      },
     });
-  }, { scope: root });
+    return () => { trigger.current = null; };
+  }, root);
 
   function go(i) {
     const st = trigger.current;
@@ -227,7 +221,7 @@ function Story({ site, car }) {
                   {step >= 3 && (
                     <div className="msg in msg-card">
                       <span className="msg-key"><Icon name="key" size={18} /></span>
-                      <span><strong>Pickup confirmed</strong>{formatDate(inDays(3), { weekday: 'short', day: 'numeric', month: 'short' })} · 9:00 am<small>{site.address}</small></span>
+                      <span suppressHydrationWarning><strong>Pickup confirmed</strong>{formatDate(inDays(3), { weekday: 'short', day: 'numeric', month: 'short' })} · 9:00 am<small>{site.address}</small></span>
                     </div>
                   )}
                   {step === 1 && <p className="typing"><i /><i /><i /></p>}
@@ -294,24 +288,6 @@ function WaysToRent({ site }) {
         <a className="btn btn-amber" data-track="whatsapp" href={waLink(site.whatsappNumber, `${site.whatsappMessage}\n\nService: ${s.name}`)} target="_blank" rel="noreferrer">
           <Icon name="whatsapp" />Ask about {s.name.toLowerCase()}
         </a>
-      </div>
-    </section>
-  );
-}
-
-export function CtaBand({ site }) {
-  return (
-    <section className="cta">
-      <div className="wrap">
-        <Reveal>
-          <p className="eyebrow">Ready when you are</p>
-          <h2>Where to <em>next?</em></h2>
-          <p className="lede">Send your dates and destination. We’ll reply with the cars that fit.</p>
-          <div className="hero-actions">
-            <a className="btn btn-amber" data-track="whatsapp" href={waLink(site.whatsappNumber, site.whatsappMessage)} target="_blank" rel="noreferrer"><Icon name="whatsapp" />WhatsApp us</a>
-            <a className="btn btn-glass" href={telLink(site.phone)}><Icon name="phone" size={18} />Call {site.phone}</a>
-          </div>
-        </Reveal>
       </div>
     </section>
   );

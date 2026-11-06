@@ -47,7 +47,7 @@ export function createStore(key, { storage, parse, initial }) {
     globalThis.addEventListener?.('storage', onStorage);
     return () => { subs.delete(f); globalThis.removeEventListener?.('storage', onStorage); };
   };
-  return { get: read, set: write, subscribe };
+  return { get: read, set: write, subscribe, initial };
 }
 
 export function createListStore(key, max, storage) {
@@ -71,4 +71,5 @@ const TRIP_KEYS = ['trip', 'from', 'to', 'start', 'end', 'passengers', 'bags', '
 export const cleanTrip = (t) => (t && typeof t === 'object' ? Object.fromEntries(TRIP_KEYS.filter((k) => t[k] !== undefined).map((k) => [k, typeof t[k] === 'number' ? t[k] : String(t[k]).slice(0, 120)])) : null);
 export const trip = createStore('de:trip', { storage: () => safeStorage('sessionStorage'), parse: cleanTrip, initial: null });
 
-export const useStore = (s) => useSyncExternalStore(s.subscribe, s.get, s.get);
+// The server can't see this browser's storage, so a page first draws with nothing saved, then fills in.
+export const useStore = (s) => useSyncExternalStore(s.subscribe, s.get, () => s.initial);

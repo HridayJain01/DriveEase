@@ -34,7 +34,7 @@ export const site = {
     { slug: 'self-drive', name: 'Self-drive rentals', summary: "Take the wheel yourself in Mumbai, by the day, weekend or week.", details: "Rent a car in Mumbai and drive it on your own schedule. Pick a hatchback for squeezing through city traffic and tight parking, a sedan for a comfortable commute, or an SUV or seven-seater when more people are coming along.\n\nGetting started is simple. Choose a car from the fleet, message us on WhatsApp with your dates and pickup point, and share your driving licence and ID. We confirm availability, the deposit and any kilometre limits in the chat before you commit, so nothing comes as a surprise at pickup.\n\nSelf-drive suits a day of errands across the city, a visiting family who need to get around, or a weekend when you would rather leave on your own time. Not sure which car fits? The Concierge asks four quick questions and suggests the right one." },
     { slug: 'chauffeur', name: 'Chauffeur-driven', summary: "Sit back in Mumbai traffic while an experienced driver handles the road.", details: "Hire a car with a driver in Mumbai when you would rather not drive yourself. It makes sense for a long day of meetings, for elderly parents visiting relatives across the city, or for any trip where finding parking is the last thing you want to think about.\n\nTell us your route, your timing and how many people are travelling. We match you with a suitable car and driver and confirm everything on WhatsApp, including availability and what is included, before you commit.\n\nA chauffeur-driven car also works well for longer drives out of the city, where you can rest on the way and arrive fresh. Share your plan with us and we will suggest what fits." },
     { slug: 'airport', name: 'Airport transfers', summary: "Mumbai airport pickups and drops, with room for the luggage.", details: "Book a car for your Mumbai airport pickup or drop at Chhatrapati Shivaji Maharaj International Airport. Flying through Navi Mumbai International Airport instead? Tell us and we will confirm what we can do. Share your flight time, terminal, your pickup or drop address, and how many people and bags are travelling.\n\nLuggage is what usually goes wrong on an airport run, so we look at your bags as well as your headcount. A family with big suitcases may need a seven-seater or an SUV even if everyone would fit in a smaller car. We suggest a car with enough boot space and confirm the pickup point on WhatsApp.\n\nLeaving early or landing late? Tell us when you message and we will confirm what is possible for your timing." },
-    { slug: 'outstation', name: 'Outstation trips', summary: "One-way or round trips from Mumbai to nearby cities and getaways.", details: "Planning a drive out of Mumbai? Popular trips include Lonavala, Pune, Nashik, Alibaug and Mahabaleshwar. Tell us where you are headed, for how many days and how many people are coming, and we will recommend a car that suits the road and the group.\n\nGhat roads and long highway stretches feel very different in a small hatchback than in an SUV or a seven-seater, especially with a full boot. We help you choose on comfort and luggage space, not just the number of seats.\n\nYou can drive yourself or ask for a driver. Deposit, kilometre limits and what is included are all confirmed in writing on WhatsApp before you leave." },
+    { slug: 'outstation', name: 'Outstation trips', summary: "One-way or round trips from Mumbai to nearby cities and getaways.", details: "Planning a drive out of Mumbai? Popular trips include Lonavala, Pune, Nashik, Shirdi, Alibaug, Mahabaleshwar and Goa. Tell us where you are headed, for how many days and how many people are coming, and we will recommend a car that suits the road and the group.\n\nGhat roads and long highway stretches feel very different in a small hatchback than in an SUV or a seven-seater, especially with a full boot. We help you choose on comfort and luggage space, not just the number of seats.\n\nYou can drive yourself or ask for a driver. Deposit, kilometre limits and what is included are all confirmed in writing on WhatsApp before you leave." },
     { slug: 'events', name: 'Weddings & events', summary: "Well-kept cars in Mumbai for the big day and the guests around it.", details: "Hire cars for weddings and family functions in Mumbai, from a car for the couple to several cars for guest pickups between the venue, hotels and the airport.\n\nEvents run on tight timings, so it helps to plan early. Share your dates, venues and the number of guests who need a ride, and we will work out how many cars you need and of what type. Everything is confirmed with you on WhatsApp, so one person can keep track of it all in a single chat.\n\nCorporate events and group outings work the same way. Tell us the plan and we will suggest what fits." },
     { slug: 'monthly', name: 'Monthly & corporate', summary: "Longer car rentals in Mumbai for teams, projects and relocations.", details: "Need a car in Mumbai for a few weeks or months? A longer rental suits people who have just moved to the city, teams working on a project here, and companies with visiting staff.\n\nTell us how long you need the car, how much you expect to drive and whether you want a driver. We will suggest a suitable car and explain what is included for longer rentals, all in writing on WhatsApp.\n\nIf your needs change partway through, message us in the same chat and we will see what can be arranged." },
   ],
@@ -42,6 +42,7 @@ export const site = {
     { q: 'What documents do I need?', a: 'Usually a valid driving licence and a government photo ID for self-drive. We confirm the exact list on WhatsApp before your trip.' },
     { q: 'Is there a security deposit?', a: 'Deposit and kilometre limits depend on the car and trip. We share them in writing before you confirm.' },
     { q: 'Can I book a specific car?', a: 'Yes — tap Enquire on any car and the model is added to your message. We will confirm availability for your dates.' },
+    { q: 'Why are there no prices on the website?', a: 'The cost depends on the car, your dates, the distance and whether you want a driver, so one number would usually be wrong. Tell us your trip on WhatsApp and we will confirm the cost in writing before you commit.' },
     { q: 'How do I pay?', a: 'Payment is arranged directly with our team after your booking is confirmed. The website does not take payments.' },
   ],
 };
@@ -113,6 +114,80 @@ export const vehicles = [
 ];
 
 export const posts = [
+  {
+    slug: 'what-decides-car-rental-cost-in-mumbai',
+    title: 'What decides the cost of a car rental in Mumbai?',
+    excerpt: 'There is no price list here, but these are the six things that move the cost, and what to ask before you confirm.',
+    cover: unsplash('1596829568009-bc436aac1b63'),
+    publishedAt: '2026-11-05', published: true,
+    body: `The cost of a car rental in Mumbai mostly depends on six things: the car, how long you need it, how far you will drive, whether you want a driver, who pays for fuel and tolls, and when you travel.
+
+## 1. The car
+
+A hatchback generally costs less than a sedan, and a sedan less than a large SUV or seven-seater. An automatic can cost more than the same car with a manual gearbox. Pick the smallest car that really fits your group and bags. Our [guide to which car fits](/which-car-fits) can help.
+
+## 2. How long you need it
+
+Rentals are usually priced by the hour, day or month. Longer rentals tend to work out better per day, which is why a [monthly rental](/services/monthly) can make sense if you are in the city for a while.
+
+## 3. How far you will drive
+
+Most rentals include a set number of kilometres, and going beyond it costs extra. A trip to [Goa](/routes/mumbai-to-goa) is priced very differently from a day of errands around Andheri, even in the same car.
+
+## 4. Whether you want a driver
+
+A [car with a driver](/services/chauffeur) includes the driver's time. On overnight trips, ask how their stay and meals are handled, and what happens if you run late.
+
+## 5. Fuel, tolls and parking
+
+Some quotes include these, and some don't. Two quotes can look very different until you check. Trips that leave Maharashtra can also involve border charges.
+
+## 6. When you travel
+
+Long weekends, festivals and the wedding season are busy, so cars go quickly. Asking early gives you more choice.
+
+## Why we don't publish a rate card
+
+All six of these change from trip to trip, so a single number on a website would usually be wrong. Send us your plan on WhatsApp and we will confirm the cost in writing before you commit.
+
+## Questions to ask any rental company
+
+- How many kilometres are included, and what happens beyond that?
+- Who pays for fuel, tolls and parking?
+- How much is the deposit, and when do I get it back?
+- If there's a driver, what are the charges for nights and extra hours?
+- What happens if I return the car late?
+- What does the insurance cover if there is damage?`,
+  },
+  {
+    slug: 'self-drive-or-with-driver',
+    title: 'Self-drive or with a driver: which suits your trip?',
+    excerpt: 'A quick guide to choosing, with the situations where each one makes more sense in and around Mumbai.',
+    cover: unsplash('1638803540181-7dc1c37a6952'),
+    publishedAt: '2026-11-05', published: true,
+    body: `Choose self-drive if you are comfortable in Mumbai traffic and want the freedom to change plans. Choose a car with a driver when parking, long hours or tiredness would spoil the trip.
+
+| Your trip | Better choice | Why |
+| --- | --- | --- |
+| A day of meetings in Fort or BKC | With a driver | Parking is hard to find, and you can work on the way |
+| An airport run with big bags | With a driver | No parking or waiting, and help with luggage |
+| A couple's weekend in Lonavala | Self-drive | An easy road, and you can stop when you like |
+| A family trip to Mahabaleshwar or Goa | With a driver, or two drivers | Long hours and ghat roads are tiring for one person |
+| A month in Mumbai after moving | Self-drive | You drive every day and keep your own schedule |
+| Guests at a wedding | With a driver | Timings are tight, and guests don't know the roads |
+
+## When self-drive works well
+
+You need a valid driving licence and ID, and you should be happy driving in stop-start traffic. An [automatic](/cars/automatic) makes this much less tiring. Read our guide to the [documents to keep ready](/blog/documents-to-keep-ready-before-renting-a-car) before you go.
+
+## When a driver is worth it
+
+A driver makes the most sense when you would rather use the time for something else, or when no one in the group wants to drive after a long day. On trips with a night away, ask how the driver's stay and meals are handled.
+
+## Still not sure?
+
+Tell us your plan on WhatsApp and we will say honestly which one we would pick, or let the [Concierge](/concierge) suggest a car. See also [self-drive rentals](/services/self-drive) and [chauffeur-driven cars](/services/chauffeur).`,
+  },
   {
     slug: 'weekend-drives-from-mumbai',
     title: 'Five weekend drives from Mumbai and the car for each',
@@ -192,7 +267,9 @@ Airport pickup areas are busy and can change, so agree on the meeting point befo
 
 Keep your licence and ID within easy reach. Our [guide to the documents you need](/blog/documents-to-keep-ready-before-renting-a-car) covers the rest.
 
-Ready to plan it? See [Mumbai Airport car rental](/car-rental/mumbai-airport), or send us your flight on WhatsApp and we will confirm the car and the meeting point.`,
+Ready to plan it? See [Mumbai Airport car rental](/car-rental/mumbai-airport), or send us your flight on WhatsApp and we will confirm the car and the meeting point.
+
+*Background on the airport changes: [Navi Mumbai Airport opening](https://www.freepressjournal.in/mumbai/nmia-takes-off-today-as-navi-mumbai-international-airport-begins-commercial-operations-making-mmr-indias-first-dual-airport-system) (Free Press Journal), [Terminal 1 rebuild](https://www.businesstoday.in/india/story/mumbai-airport-terminal-1-to-shut-for-4-years-from-october-25-what-flyers-need-to-know-559256-2026-10-03) (Business Today). Plans can change, so your airline is the final word.*`,
   },
   {
     slug: 'choosing-the-right-car-for-a-family-road-trip',

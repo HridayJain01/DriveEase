@@ -59,16 +59,21 @@ The Concierge trip answers are kept in `sessionStorage` for the visit, so car pa
 - **One page per service** (`/services/:slug`): its own title, h1, the admin's long description, cars picked by the Concierge rules, links to the other services, and a WhatsApp button. These target searches like "airport transfer in <city>".
 - **Areas we serve**: a list in Site details, shown on the home page and sent to Google as `areaServed`.
 - **Mumbai landing pages** (`src/seo-content.js`, listed in `src/seo-links.js`, shown by `src/pages/Landing.jsx`): routes (`/routes/:slug`), areas (`/car-rental/:slug`), car types (`/cars/:slug`), with hubs at `/routes` and `/car-rental`. Each has its own written text, a short answer first, questions and a WhatsApp button. They only go live when the city is Mumbai. An area also needs to be in Site details, and a car type needs a matching car in the fleet. The text loads as its own 13 KB chunk. See `docs/seo-plan.md` for which page targets which search.
-- **Text without JavaScript** (`server/prerender.js`): the server puts each page's text and links in the HTML, for readers that don't run JavaScript (Bing at first, AI search tools, simple crawlers). A small script in `index.html` hides it from everyone else until React replaces it, so visitors never see it flash.
+- **Pages arrive fully drawn** (`src/entry-server.jsx`, called from `server/html.js`): the server renders each page with React, so visitors see it straight away and search engines and AI tools read the real page without running JavaScript. The browser then takes over the same HTML (`hydrateRoot`). Personal pages (My Garage, Compare, admin) are drawn in the browser. If server rendering ever fails, the page still works and the browser draws it instead.
 - **`/llms.txt`**: a plain summary for AI search tools, including a note that the site shows no prices, so they shouldn't quote any.
 - **`/privacy` and `/terms`**: written from what the site really does. Have the client review them.
+- **`/which-car-fits`**: a small free tool that shows which cars take a group's people and big bags, from each car's listed seats and bags.
+- **One address per page**: `/Fleet/` redirects to `/fleet` with a 301. Any address other than the configured one (old deployment links, for example) gets `X-Robots-Tag: noindex`.
+- **`/blog/feed.xml`** is an RSS feed of articles. The sitemap also lists car and article photos for image search. **IndexNow:** set `INDEXNOW_KEY`, then `npm run indexnow -- https://your-address` tells Bing and others about new pages.
+- **Google Analytics is optional:** set `GA_MEASUREMENT_ID`. It loads after the first interaction or 5 seconds, and sends `generate_lead` for WhatsApp taps and `click_to_call` for calls.
 - **Measuring**: WhatsApp taps from the landing pages show in Insights as "Route, area & car type pages". Search Console covers the searches.
 - **Every page is served by Express** (`server/html.js`). It fills in the title, description, canonical URL, Open Graph/X tags (locale `en_IN`) and a 1200×630 preview image, so a car page shared on WhatsApp shows the car's photo and name. Structured data is one `@graph`: `AutoRental` (phone, email, address, areas served, logo, contact point, map, social profiles) on every page, plus `WebSite` + `FAQPage` (home), `ItemList` (fleet), `BreadcrumbList` + `Car` (car pages), `BreadcrumbList` + `Service` (service pages), `BreadcrumbList` + `Service` + `FAQPage` (routes and areas), `BreadcrumbList` + `ItemList` + `FAQPage` (car types) and `BreadcrumbList` + `BlogPosting` (articles). There are no ratings or prices in it, since the site shows neither. Unknown pages return a real 404 with `noindex`.
 - **Search Console:** paste the HTML-tag code in Site details → Google; the server adds the `google-site-verification` meta tag. With no database yet, set `GOOGLE_SITE_VERIFICATION` on the host instead.
 - **`/sitemap.xml`** lists all public pages, every service, route, area and car type page, every published car (with its last-updated date) and post. **`/robots.txt`** blocks `/admin` and `/api/admin` only, so Google can fetch the public API while rendering; API responses carry `X-Robots-Tag: noindex` so they never appear in results. Submit the sitemap in Google Search Console after launch (FR-14).
-- **The first load needs no API round trip.** The server embeds that page's data in the HTML, so content paints immediately, then the browser quietly refreshes it.
+- **The first load needs no API round trip.** The server embeds that page's data in the HTML. The browser checks for newer data once it's idle, and only redraws if something changed.
+- **Phone speed:** each page is its own download, and the server tells the browser which files to fetch early (`modulepreload`). Scroll reveals are plain CSS. GSAP only downloads when someone starts scrolling. Fonts are hosted with the site and trimmed to the characters, widths and weights it uses (`src/fonts/`). React takes over the page in small slices (`startTransition`), and off-screen sections skip layout (`content-visibility`).
 - **Caching:** on Vercel, page HTML is cached for 60 s and public API responses for 10 s, with stale-while-revalidate, so most visitors never wait on the database. Admin edits show up within about a minute. Built JS/CSS is cached for a year (file names change on every build).
-- **Bundle size:** the main bundle is about 170 KB gzipped. The Concierge (5 KB), Compare (3 KB), My Garage (2 KB), admin (11 KB) and Markdown renderer (14 KB) load only where they're needed.
+- **Bundle size:** the main bundle is about 120 KB gzipped, down from 170 KB. Every page, the admin, GSAP and the Markdown renderer load only where they're needed.
 - **Accessibility:** axe-core reports no WCAG 2 A/AA or best-practice violations on any public or admin page. The site has keyboard focus styles, a skip link, honours reduced motion, and has no horizontal overflow at 375 px, 768 px or 1440 px.
 
 ## Layout
@@ -78,8 +83,9 @@ server/app.js        Express API: public, auth and admin routes (also the Vercel
 server/db.js         MongoDB connection + models (validation lives here)
 server/auth.js       Password hashing (scrypt) and signed session cookies
 server/cloudinary.js Signs browser-to-Cloudinary uploads
-server/html.js       Server-rendered page meta, sitemap.xml, robots.txt, llms.txt
-server/prerender.js  Each page's text as plain HTML, for readers without JavaScript
+server/html.js       Fills in each page: meta, data, server-drawn HTML; also sitemap.xml, robots.txt, llms.txt, feed.xml
+src/entry-server.jsx Draws a page to HTML on the server (built to build/ssr by `npm run build`)
+src/routes.jsx       All routes, with each page as its own download
 src/seo.js           Page titles/descriptions shared by browser and server
 src/seo-links.js     List of landing pages (main bundle: footer and home links)
 src/seo-content.js   Text of the route, area, car type and legal pages
@@ -90,7 +96,7 @@ server/events.js     Validates the anonymous WhatsApp-tap / share counter
 server/app.test.js   API tests against an in-memory MongoDB (auth, enquiries, dashboard)
 scripts/demo.js      `npm run demo`: local demo without Atlas
 src/admin/           Admin panel (separate bundle, loaded only on /admin)
-src/main.jsx         Routes
+src/main.jsx         Starts React in the browser
 src/components.jsx   Shared UI: layout, cards, trip planner, enquiry form
 src/features.jsx     Save/compare toggles, WhatsApp review sheet, compare tray, car gallery
 src/concierge/       Concierge matching rules (pure functions, tested)

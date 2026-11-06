@@ -38,6 +38,7 @@ export default function Insights() {
           <div className="a-stats a-stats-3">
             <div className="a-stat is-new"><b>{data.totals.whatsapp}</b><span>WhatsApp chats opened</span></div>
             <div className="a-stat is-contacted"><b>{data.totals.share}</b><span>Cars sent to family</span></div>
+            <div className="a-stat"><b>{data.totals.call}</b><span>Call buttons tapped</span></div>
             <div className="a-stat is-quoted"><b>{data.totals.forms}</b><span>Enquiry forms</span></div>
           </div>
           <p className="a-hint a-insight-note">“Chats opened” counts taps on the website’s WhatsApp buttons, once per visitor per car. WhatsApp doesn’t tell the website whether the message was then sent, so expect fewer chats than this in your WhatsApp.</p>

@@ -1,11 +1,10 @@
 import { Link, useParams } from 'react-router';
-import { CardSkeletons, ErrorState, Icon, PageHead, Seo, VehicleCard } from '../components.jsx';
+import { CardSkeletons, CtaBand, ErrorState, Icon, PageHead, Seo, VehicleCard } from '../components.jsx';
 import { WhatsAppQr } from '../features.jsx';
 import { suggestedCars, tripForService } from '../concierge/match.js';
 import { useApi, waLink } from '../lib.js';
 import { serviceMeta } from '../seo.js';
 import { areaLinks, routeLinks } from '../seo-links.js';
-import { CtaBand } from './Home.jsx';
 
 // One landing page per service (e.g. /services/airport), so each can rank for its own searches.
 export default function Service() {

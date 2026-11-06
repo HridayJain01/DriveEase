@@ -7,8 +7,15 @@
     <meta name="apple-mobile-web-app-title" content="Drive Ease" />
     <meta name="theme-color" content="#f6f4ef" />
     <meta name="color-scheme" content="light" />
-    <script>document.documentElement.classList.add('js')</script>
-    <style>.js .ssr { display: none; }</style>
+    <script>
+      document.documentElement.classList.add('js');
+      // Pages arrive drawn before the app has loaded. A tap on a button in that moment is kept, and replayed once it has (src/main.jsx).
+      window.__taps = [];
+      document.addEventListener('click', function (e) {
+        var b = !window.__live && e.target.closest && e.target.closest('button:not([data-native])');
+        if (b) { e.preventDefault(); e.stopPropagation(); window.__taps.push(b); }
+      }, true);
+    </script>
     <!--seo-->
     <title>Drive Ease — Car rentals</title>
     <meta name="description" content="Rent a clean, well-kept car for airport runs, outstation trips and weekend getaways. Enquire on WhatsApp in a tap." />
@@ -17,14 +24,11 @@
     <meta property="og:type" content="website" />
     <!--/seo-->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="/src/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preconnect" href="https://images.unsplash.com" />
-    <!-- Fonts load without holding up the page: text shows at once, then switches font. -->
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Geist:wght@400..600&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Geist:wght@400..600&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet" /></noscript>
   </head>
   <body>
     <div id="root"></div>

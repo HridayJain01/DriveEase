@@ -1,12 +1,11 @@
 import { Link, useParams } from 'react-router';
-import { ErrorState, Icon, PageHead, Seo, VehicleCard } from '../components.jsx';
+import { CtaBand, ErrorState, Icon, PageHead, Seo, VehicleCard } from '../components.jsx';
 import { WhatsAppQr } from '../features.jsx';
 import { suggestedCars } from '../concierge/match.js';
-import { useApi, waLink } from '../lib.js';
+import { formatDate, useApi, waLink } from '../lib.js';
 import { landingMeta, pageMeta } from '../seo.js';
 import { AREAS, CAR_TYPES, LEGAL, ROUTES } from '../seo-content.js';
-import { areaLinks, carsOfType, routeLinks, typeLinks } from '../seo-links.js';
-import { CtaBand } from './Home.jsx';
+import { areaLinks, carsOfType, CONTENT_UPDATED, routeLinks, typeLinks } from '../seo-links.js';
 
 // Pages that answer one search each: a route from Mumbai, a part of Mumbai, or a type of car.
 // The server sends the same text in plain HTML (server/prerender.js) and the matching structured data.
@@ -52,6 +51,7 @@ function LandingPage({ site, page, crumbs, askAbout, cta, trip, facts, list, car
           <p className="answer">{page.answer}</p>
           {page.paras.map((p) => <p key={p}>{p}</p>)}
           {list && <><h2>{list.title}</h2><ul>{list.items.map((t) => <li key={t}>{t}</li>)}</ul></>}
+          <p className="landing-note">Last updated {formatDate(CONTENT_UPDATED, { month: 'long', year: 'numeric' })}.</p>
         </div>
         <aside className="side-card service-side">
           {facts}
@@ -130,11 +130,14 @@ function CarTypePage({ site, vehicles, t }) {
   );
 }
 
-function Hub({ site, path, title, cards }) {
+function Hub({ site, path, crumb, title, cards, children }) {
   const meta = pageMeta(path, site);
   return (
     <>
       <Seo {...meta} />
+      <div className="wrap">
+        <nav className="crumbs" aria-label="Breadcrumb"><Link to="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">{crumb}</span></nav>
+      </div>
       <PageHead h1={meta.h1} title={title}><p>{meta.description}</p></PageHead>
       <section className="wrap hub-grid">
         {cards.map(([to, heading, note, facts]) => (
@@ -145,6 +148,7 @@ function Hub({ site, path, title, cards }) {
           </Link>
         ))}
       </section>
+      {children}
       <CtaBand site={site} />
     </>
   );
@@ -181,11 +185,22 @@ export default function Landing({ kind }) {
   if (LEGAL[kind]) return <Legal site={site} doc={LEGAL[kind]} />;
   if (kind === 'routes') {
     const routes = routeLinks(site).map((l) => ROUTES.find((r) => r.slug === l.slug));
-    return routes.length ? <Hub site={site} path="/routes" title="Where are you driving?" cards={routes.map((r) => [`/routes/${r.slug}`, r.h1, r.slogan, `${r.distance} · ${r.time}`])} /> : missing;
+    return routes.length ? (
+      <Hub site={site} path="/routes" crumb="Routes" title="Where are you driving?" cards={routes.map((r) => [`/routes/${r.slug}`, r.h1, r.slogan, `${r.distance} · ${r.time}`])}>
+        <section className="wrap-narrow prose route-table" aria-labelledby="routes-table-h">
+          <h2 id="routes-table-h">Popular drives from Mumbai at a glance</h2>
+          <table>
+            <thead><tr><th scope="col">Drive</th><th scope="col">Distance and time</th><th scope="col">A car that suits it</th></tr></thead>
+            <tbody>{routes.map((r) => <tr key={r.slug}><td><Link to={`/routes/${r.slug}`}>{r.place}</Link></td><td>{r.distance}. {r.time}.</td><td>{r.suits}</td></tr>)}</tbody>
+          </table>
+          <p className="landing-note">Approximate, and depends on traffic and where you start. Last updated {formatDate(CONTENT_UPDATED, { month: 'long', year: 'numeric' })}.</p>
+        </section>
+      </Hub>
+    ) : missing;
   }
   if (kind === 'areas') {
     const areas = areaLinks(site).map((l) => AREAS.find((a) => a.slug === l.slug));
-    return areas.length ? <Hub site={site} path="/car-rental" title="Where should we meet you?" cards={areas.map((a) => [`/car-rental/${a.slug}`, a.h1, a.slogan])} /> : missing;
+    return areas.length ? <Hub site={site} path="/car-rental" crumb="Areas" title="Where should we meet you?" cards={areas.map((a) => [`/car-rental/${a.slug}`, a.h1, a.slogan])} /> : missing;
   }
   if (kind === 'route') {
     const r = routeLinks(site).some((l) => l.slug === slug) && ROUTES.find((x) => x.slug === slug);

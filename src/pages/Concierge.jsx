@@ -20,9 +20,8 @@ const RESULTS = STEPS.length;
 export default function Concierge() {
   const { data: site } = useApi('/api/site');
   const { data: vehicles, error } = useApi('/api/vehicles');
-  const stored = useStore(tripStore);
-  const [a, setA] = useState(() => ({ ...blankAnswers(), ...stored }));
-  const [done, setDone] = useState(() => stepsDone(stored)); // steps completed so far
+  const [a, setA] = useState(blankAnswers);
+  const [done, setDone] = useState(0); // steps completed so far
   const [errors, setErrors] = useState({});
   const [params, setParams] = useSearchParams();
   const heading = useRef();
@@ -32,14 +31,21 @@ export default function Concierge() {
   const wanted = Math.max(0, Math.min(RESULTS, Number(params.get('step')) || 0));
   const step = Math.min(wanted, done, firstInvalid === -1 ? RESULTS : firstInvalid); // no skipping ahead via the URL
 
+  // Saved answers live in this browser, so the server can't draw them: they're restored once loaded.
   // ?trip=family (from the home page) preselects the trip and moves on.
   useEffect(() => {
+    const saved = tripStore.get();
+    const answers = { ...blankAnswers(), ...saved };
+    const steps = stepsDone(saved);
     const t = params.get('trip');
     if (t && TRIPS.some((x) => x.id === t)) {
-      const nextA = { ...a, trip: t };
+      const nextA = { ...answers, trip: t };
       setA(nextA);
-      remember(nextA, Math.max(done, 1));
+      remember(nextA, Math.max(steps, 1));
       setParams({ step: '1' }, { replace: true });
+    } else if (saved) {
+      setA(answers);
+      setDone(steps);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
